@@ -2,6 +2,7 @@ pylint>=1.5.4
 setuptools_scm>=1.11.1
 sphinx_rtd_theme>=0.1.9
 sphinx>=1.4.1
-pandas==0.18.1
-git+http://gitlab.rtp.nutanix.com/ntnx/gnosis.git
+pandas==0.19.*
+-e git+http://gitlab-ee.rtp.nutanix.com/gdowding/nutbuf.git@master#egg=nutbuf
+-e git+http://gitlab.rtp.nutanix.com/ntnx/gnosis.git@master#egg=ntnx_gnosis
 
