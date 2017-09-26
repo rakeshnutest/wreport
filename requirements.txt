@@ -1,0 +1,7 @@
+pylint>=1.5.4
+setuptools_scm>=1.11.1
+sphinx_rtd_theme>=0.1.9
+sphinx>=1.4.1
+pandas==0.18.1
+git+http://gitlab.rtp.nutanix.com/ntnx/gnosis.git
+

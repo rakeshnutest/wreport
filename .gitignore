@@ -1,0 +1,7 @@
+.idea
+doc
+*.pyc
+.DS_Store
+.eggs/
+*.egg-info/
+.gitkeep
