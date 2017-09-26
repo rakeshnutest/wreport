@@ -2,9 +2,12 @@
 #
 # Aurthor: Dan.Small@nutanix.com
 #
-# The Weather Report is a tool that runs various performance related checks in
-# an effort to identify common issues that have a known impact on performance.
-#
+"""The Weather Report tool.
+
+The Weather Report is a tool that runs various performance related checks in
+an effort to identify common issues that have a known impact on performance.
+"""
+
 import argparse
 import copy_reg
 import multiprocessing as mp
@@ -148,7 +151,7 @@ class WeatherReport(object):
     Args:
       vdisk: A gnosis.explore.vdisk.VDisk object.
     """
-    checks  = [check(vdisk) for check in self._VDISK_CHECKS]
+    checks = [check(vdisk) for check in self._VDISK_CHECKS]
     return {vdisk.vdisk_id : self._run_checks(checks)}
 
   def _check_vm(self, vm):
@@ -209,22 +212,23 @@ if __name__ == "__main__":
     PROC_COUNT = 1
 
   parser = argparse.ArgumentParser(
-    prog="Weather Report",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    description="The Weather Report is a tool that performs checks against a"\
-    "data collection to identify known issues.",
-    fromfile_prefix_chars="@")
-  parser.add_argument("data_collection_path",
-    help="The location of the data to run the report against.")
-  parser.add_argument("-p", "--proc_cnt",
-    default=PROC_COUNT,
-    help="The number of processes to use.")
-  parser.add_argument("-r", "--regen",
-  action="store_true",
-  help="Do not rely on the saved data, instead, re-run the report.")
-  parser.add_argument("-q", "--quiet",
-  action="store_true",
-  help="Silently run the report.")
+      prog="Weather Report",
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+      description="The Weather Report is a tool that performs checks against a"\
+      "data collection to identify known issues.",
+      fromfile_prefix_chars="@")
+  parser.add_argument(
+      "data_collection_path",
+      help="The location of the data to run the report against.")
+  parser.add_argument(
+      "-p", "--proc_cnt", default=PROC_COUNT,
+      help="The number of processes to use.")
+  parser.add_argument(
+      "-r", "--regen", action="store_true",
+      help="Do not rely on the saved data, instead, re-run the report.")
+  parser.add_argument(
+      "-q", "--quiet", action="store_true",
+      help="Silently run the report.")
   args = parser.parse_args()
   report = WeatherReport(args.data_collection_path,
                          proc_cnt=int(args.proc_cnt),
@@ -236,3 +240,4 @@ if __name__ == "__main__":
     report.print_info()
     print
     report.print_results()
+

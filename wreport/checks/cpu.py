@@ -90,7 +90,7 @@ class NodeHostCpuUtilInbalance(base.BaseCheck):
     # TODO: Mitigate false positives by comparing core utilizaiton between
     # sockets.  See: ENG-103593.
     group_len = len(data) / 2
-    cov = 0
+    cv = 0
     for idx_slice in range(len(data))[0::group_len]:
       group = data[idx_slice:idx_slice+group_len]
       # Sample coefficient of variation
