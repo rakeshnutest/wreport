@@ -1,9 +1,13 @@
 # Copyright (c) 2017 Nutanix Inc. All rights reserved.
 # Author: dan.small@nutanix.com
 #
-# A base check for others to inherit from or use as a template.
-#
+"""A base check for others to inherit from, or use as a template.
+
+All checks require a TITLE and DOC constant, and a run_check method.
+"""
+
 class BaseCheck(object):
+  """The base check structure."""
   # The display name for the check.
   TITLE = ""
   # A URL for linked documentation.
@@ -31,5 +35,6 @@ class BaseCheck(object):
 
   # All Checks should include a run_check method that returns the result.
   def run_check(self):
+    """Execute the check and return the expected dictionary."""
     return self.result
 

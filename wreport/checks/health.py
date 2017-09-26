@@ -1,15 +1,13 @@
 # Copyright (c) 2017 Nutanix Inc. All rights reserved.
 # Author: dan.small@nutanix.com
 #
-# Check for Stargate restarts.
-#
-# This is a pass fail check.
-#
+"""Checks for issues related to systemic health."""
+
 from wreport.checks import base
 
 
 class NodeStargateRestarts(base.BaseCheck):
-  """Cold-tier read check."""
+  """Stargate Restart check."""
   TITLE = "Stargate Restarts"
   DOC = "some_url"
   MSG = "Restarts seen during the collection at {}."
@@ -23,6 +21,5 @@ class NodeStargateRestarts(base.BaseCheck):
           ", ".join(self._obj.stargate_start_times))
     else:
       self.result["status"] = 0
-
     return self.result
 

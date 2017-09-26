@@ -1,9 +1,8 @@
 # Copyright (c) 2017 Nutanix Inc. All rights reserved.
 # Author: dan.small@nutanix.com
 #
-# Various storage related checks.
-#
-#
+"""Various storage related checks."""
+
 from wreport.checks import base
 
 
@@ -51,12 +50,12 @@ class VDiskColdTierReads(base.BaseCheck):
         float(len(data)) > self._HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(
-        self._HRD_WTRMRK * 100, len(data[data > self._HRD_WTRMRK]))
+          self._HRD_WTRMRK * 100, len(data[data > self._HRD_WTRMRK]))
     elif len(data[data > self._SFT_WTRMRK]) / \
         float(len(data)) > self._SFT_WTRMRK:
       self.result["status"] = 1
       self.result["criteria"] = self._MSG.format(
-        self._SFT_WTRMRK * 100, len(data[data > self._SFT_WTRMRK]))
+          self._SFT_WTRMRK * 100, len(data[data > self._SFT_WTRMRK]))
     else:
       self.result["status"] = 0
 

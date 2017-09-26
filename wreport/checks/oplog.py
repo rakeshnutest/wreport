@@ -1,10 +1,12 @@
 # Copyright (c) 2017 Nutanix Inc. All rights reserved.
 # Author: dan.small@nutanix.com
 #
-# Various oplog_store checks.
-#
-# Some of these checks are technically VDisk checks, however, the data is
-# sourced from a node level dataset like hvars.
+"""Various oplog_store checks.
+
+Some of these checks are technically VDisk checks, however, the data is
+sourced from a node level dataset like hvars.
+"""
+
 from wreport.checks import base
 
 
@@ -89,7 +91,7 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
       if over:
         self.result["criteria"].append(self._MSG.format(
             group_name, self._WTRMRK * 100, over))
-    if len(self.result["criteria"]) > 0:
+    if self.result["criteria"]:
       self.result["status"] = 2
     else:
       self.result["status"] = 0

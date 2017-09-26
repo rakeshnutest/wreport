@@ -1,9 +1,7 @@
 # Copyright (c) 2017 Nutanix Inc. All rights reserved.
 # Author: dan.small@nutanix.com
 #
-# Various CPU related checks.
-#
-#
+"""Various CPU related checks."""
 from wreport.checks import base
 
 
@@ -92,9 +90,9 @@ class NodeHostCpuUtilInbalance(base.BaseCheck):
     # TODO: Mitigate false positives by comparing core utilizaiton between
     # sockets.  See: ENG-103593.
     group_len = len(data) / 2
-    cv = 0
-    for s in range(len(data))[0::group_len]:
-      group = data[s:s+group_len]
+    cov = 0
+    for idx_slice in range(len(data))[0::group_len]:
+      group = data[idx_slice:idx_slice+group_len]
       # Sample coefficient of variation
       group_cv = group.std() / group.mean()
       # Base evaluation on the most variation.

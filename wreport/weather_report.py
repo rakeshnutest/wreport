@@ -206,7 +206,7 @@ if __name__ == "__main__":
   # limit default process count.
   PROC_COUNT = mp.cpu_count() / 2
   if PROC_COUNT < 1:
-  PROC_COUNT = 1
+    PROC_COUNT = 1
 
   parser = argparse.ArgumentParser(
     prog="Weather Report",
