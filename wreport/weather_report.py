@@ -201,7 +201,7 @@ class WeatherReport(object):
           continue
         if isinstance(result, list):
           print "\t{0}: {1}".format(obj, "\n".join(result["criteria"]))
-        else:
+        elif isinstance(result, dict):
           print "\t{0}: {1}".format(obj, result["criteria"])
       print
 
