@@ -45,14 +45,14 @@ class NodeMedusaLatCost(base.BaseCheck):
         values="latencypct_oftotal").sum(axis=1)
     # Check if we exceeded both the response time and the percentage of the
     # overal total watermarks.
-    if pdf[(pdf.avg_lat_usec >= self._R_WTRMRK) &
-           (pdf.pct_total >= self._HRD_WTRMRK)]:
+    if not pdf[(pdf.avg_lat_usec >= self._R_WTRMRK) &
+               (pdf.pct_total >= self._HRD_WTRMRK)].empty:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(
           self._R_WTRMRK / 1000, self._HRD_WTRMRK)
     # If we didn't hit the hard watermark, check the soft.
-    elif pdf[(pdf.avg_lat_usec >= self._R_WTRMRK) &
-             (pdf.pct_total >= self._SFT_WTRMRK)]:
+    elif not pdf[(pdf.avg_lat_usec >= self._R_WTRMRK) &
+                 (pdf.pct_total >= self._SFT_WTRMRK)].empty:
       self.result["status"] = 1
       self.result["criteria"] = self._MSG.format(
           self._R_WTRMRK / 1000, self._SFT_WTRMRK)

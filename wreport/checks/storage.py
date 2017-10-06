@@ -25,7 +25,7 @@ class VDiskColdTierReads(base.BaseCheck):
 
     This check is based on the Arithmos virtual_disk_stats.
     """
-    wanted = ["estore_hdd_mb", "estore_ssd_mb"]
+    wanted = ["estore_hdd_kb", "estore_ssd_kb"]
     df = self._obj.read_source_df
     # Make sure the counters are there.
     for counter in wanted:
@@ -33,7 +33,7 @@ class VDiskColdTierReads(base.BaseCheck):
         # Throwing an exception will percolate up.
         raise Exception("read_source_df missing columns: {0}.".format(
             ", ".join(wanted)))
-    hdd_ratio = df.estore_hdd_mb / (df.estore_hdd_mb + df.estore_ssd_mb)
+    hdd_ratio = df.estore_hdd_kb / (df.estore_hdd_kb + df.estore_ssd_kb)
     hdd_ratio.dropna(inplace=True)
     # Run the check.
     self._check_watermarks(hdd_ratio)
