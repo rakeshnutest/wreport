@@ -139,7 +139,7 @@ class WeatherReport(object):
         # self._raw_results.extend(
         #     [self._check_vms) for vm in self.cluster.vms.values()])
         self._raw_results.extend(
-            [self._check_nodes(node) for node in self.cluster.nodes.values()])
+            [self._check_node(node) for node in self.cluster.nodes.values()])
       # Save our work.
       with open(self._pickled_results_path, "w") as pickled_wreport:
         pickle.dump(self._raw_results, pickled_wreport)
