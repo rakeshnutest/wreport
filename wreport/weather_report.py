@@ -136,9 +136,9 @@ class WeatherReport(object):
       else:
         self._raw_results = [self._check_vdisk(vdisk) for vdisk in \
             self.cluster.vdisks.values()]
-        # self._raw_result.extend(
+        # self._raw_results.extend(
         #     [self._check_vms) for vm in self.cluster.vms.values()])
-        self._raw_result.extend(
+        self._raw_results.extend(
             [self._check_nodes(node) for node in self.cluster.nodes.values()])
       # Save our work.
       with open(self._pickled_results_path, "w") as pickled_wreport:
