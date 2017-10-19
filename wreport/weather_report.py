@@ -69,57 +69,6 @@ class WeatherReport(object):
         self._raw_results = pickle.load(pickled_wreport)
 
   @property
-  def info(self):
-    """Return a dictionary of pertinent cluster information."""
-    info = dict(cluster_id=self.cluster.cluster_id,
-                cluster_name=self.cluster.cluster_name,
-                aos_ver=self.cluster.release_version[:45],
-                node_count=len(self.cluster.nodes),
-                hot_tier_size=self.cluster.hot_tier_size,
-                cold_tier_size=self.cluster.cold_tier_size,
-                vm_count=len(self.cluster.vms),
-                dc_path=self._dc_path)
-    return info
-
-  def print_info(self):
-    """Print cluster information."""
-    print "Cluster ID: {0} - Name: {1}".format(
-        self.cluster.cluster_id, self.cluster.cluster_name)
-    print "AOS Release: {0}".format(self.cluster.release_version[:45])
-    print "{0} Nodes - {1} UVMs".format(
-        len(self.cluster.nodes), len(self.cluster.vms))
-    print "Hot/Cold Tier Size: {0} / {1}".format(
-        self.cluster.hot_tier_size, self.cluster.cold_tier_size)
-
-  @property
-  def results(self):
-    """Return a dictionry of results that are grouped by the check name.
-
-    Checks that passed are filtered out.
-    """
-    # This is the primary use case for the weather report and these results are
-    # intended to be passed to a jinja2 template.
-    grouped_dict = {}
-    # The raw results are a list of nested dictionaries.
-    for obj_results_dict in self.raw_results:
-      for obj_id, results_dict in obj_results_dict.items():
-        # The results_dict is nested dictionary keyed by test name.
-        for check_name, result in results_dict.items():
-          # Filter out checks that passed.
-          if result["status"] == 0:
-            continue
-          if check_name not in grouped_dict.keys():
-            grouped_dict[check_name] = {}
-          grouped_dict[check_name][obj_id] = result
-    # Adds the title and documentation to the checks.
-    for check in self._VDISK_CHECKS + self._VM_CHECKS + self._NODE_CHECKS + \
-        self._CLUSTER_CHECKS:
-      if check.__name__ in grouped_dict.keys():
-        grouped_dict[check.__name__]["title"] = check.TITLE
-        grouped_dict[check.__name__]["doc_link"] = check.DOC
-    return grouped_dict
-
-  @property
   def raw_results(self):
     """Runs and returns a list of dicts containing all unadulterated results."""
     if self._raw_results is None:
@@ -192,17 +141,84 @@ class WeatherReport(object):
       result[check.__class__.__name__] = check_result
     return result
 
+  @property
+  def info(self):
+    """Return a dictionary of pertinent cluster information."""
+    info = dict(cluster_id=self.cluster.cluster_id,
+                cluster_name=self.cluster.cluster_name,
+                aos_ver=self.cluster.release_version[:45],
+                node_count=len(self.cluster.nodes),
+                hot_tier_size=self.cluster.hot_tier_size,
+                cold_tier_size=self.cluster.cold_tier_size,
+                vm_count=len(self.cluster.vms),
+                dc_path=self._dc_path)
+    return info
+
+  def print_info(self):
+    """Print cluster information."""
+    print "Cluster ID: {0} - Name: {1}".format(
+        self.cluster.cluster_id, self.cluster.cluster_name)
+    print "AOS Release: {0}".format(self.cluster.release_version[:45])
+    print "{0} Nodes - {1} UVMs".format(
+        len(self.cluster.nodes), len(self.cluster.vms))
+    print "Hot/Cold Tier Size: {0} / {1}".format(
+        self.cluster.hot_tier_size, self.cluster.cold_tier_size)
+
+  def get_results(self, status_filter=[0, 1, 2, 3]):
+    """Return a dictionry of results that are grouped by the check name.
+
+    Args:
+      status_filter (list): Only return results with these status codes.
+    """
+    grouped_dict = {}
+    # The raw results are a list of nested dictionaries.
+    for obj_results_dict in self.raw_results:
+      for obj_id, results_dict in obj_results_dict.items():
+        # The results_dict is nested dictionary keyed by test name.
+        for check_name, result in results_dict.items():
+          # Filter out stuff we don't want.
+          if result["status"] not in status_filter:
+            continue
+          if check_name not in grouped_dict.keys():
+            # The group_status key is used to track the worst result found.
+            grouped_dict[check_name] = {"group_status" : result["status"]}
+          grouped_dict[check_name][obj_id] = result
+          # A status of 3 indicates that the check threw an exception, if other
+          # objects tested successfully then it's object specific and we want to
+          # replace the global status  with that of a successful check.
+          # Otherwise, "unknown" status will be maintained, indicating a
+          # sysmtemic issue.
+          if result["status"] < 3 and \
+              grouped_dict[check_name]["group_status"] == 3:
+            grouped_dict[check_name]["group_status"] = result["status"]
+          elif 3 > result["status"] > grouped_dict[check_name]["group_status"]:
+            grouped_dict[check_name]["group_status"] = result["status"]
+    # Adds the title and documentation to the checks.
+    for check in self._VDISK_CHECKS + self._VM_CHECKS + self._NODE_CHECKS + \
+        self._CLUSTER_CHECKS:
+      if check.__name__ in grouped_dict.keys():
+        grouped_dict[check.__name__]["title"] = check.TITLE
+        grouped_dict[check.__name__]["doc"] = check.DOC
+    return grouped_dict
+
   def print_results(self):
     """Prettily prints the results."""
-    for check, check_results in self.results.items():
+    for check, check_results in self.get_results().items():
+      if check_results["group_status"] == 0:
+        print "{0}: No Issues Found".format(check)
+        continue
+      elif check_results["group_status"] == 3:
+        print "{0}: All Unknown".format(check)
+        continue
       print check
       for obj, result in check_results.items():
-        if obj == "doc_link":
+        if obj == "doc":
           continue
         if isinstance(result, list):
           print "\t{0}: {1}".format(obj, "\n".join(result["criteria"]))
         elif isinstance(result, dict):
-          print "\t{0}: {1}".format(obj, result["criteria"])
+          if result["criteria"] is not None:
+            print "\t{0}: {1}".format(obj, result["criteria"])
       print
 
 if __name__ == "__main__":
