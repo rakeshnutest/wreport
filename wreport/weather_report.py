@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Nutanix Inc.  All rights reserved.
 #
-# Aurthor: Dan.Small@nutanix.com
+# Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com\
 #
 """The Weather Report tool.
 
@@ -17,12 +17,26 @@ import types
 
 from gnosis.explore import cluster as xcluster
 
+from wreport import task
 from wreport.checks import cpu
 from wreport.checks import health
 from wreport.checks import metadata
 from wreport.checks import oplog
 from wreport.checks import storage
 
+
+_VDISK_CHECKS = [storage.VDiskColdTierReads]
+_VM_CHECKS = []
+_NODE_CHECKS = [health.NodeStargateRestarts,
+                oplog.NodeBusyOplogCount,
+                oplog.VDiskLogicalOplogLimit,
+                metadata.NodeMedusaLatCost,
+                cpu.NodeHostCpuUtil,
+                cpu.NodeHostCpuUtilInbalance,
+                cpu.NodeCvmCpuReady,
+                cpu.NodeCvmCpuUsage]
+_CLUSTER_CHECKS = []
+TASKS = task.Tasks()
 
 # Allows you to pass instance methods to processes.
 def _pickle_method(method):
@@ -33,19 +47,135 @@ def _pickle_method(method):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 
+@TASKS.add_task(0)
+class CheckVDisk(task.WReportTask):
+  """Methods for executing checks against a VDisk object."""
+
+  _name = "VDisk"
+
+  def __init__(self, vdisk):
+    """Initialize a task to run checks."""
+    self.vdisk = vdisk
+    self._result = {}
+
+  def run(self):
+    """Execute the VDisk checks."""
+    checks = [check(self.vdisk) for check in _VDISK_CHECKS]
+    self._result = self._run_checks(checks)
+
+  def result(self):
+    """Return the result of the task."""
+    return {self.vdisk.vdisk_id : self._result}
+
+  @classmethod
+  def get_jobs(cls, data_collection):
+    """Get the jobs for checking a VDisks.
+
+    This generator will return a job for each VDisk object within the cluster.
+
+    Args:
+      data_collection: The data path.
+    """
+    cluster = xcluster.Cluster(data_collection=data_collection)
+    for vdisk in cluster.vdisks.values():
+      yield CheckVDisk(vdisk)
+
+
+@TASKS.add_task(0)
+class CheckVM(task.WReportTask):
+  """Methods for executing checks against a VM object."""
+
+  _name = "VM"
+
+  def __init__(self, vm):
+    """Initialize a task to run checks."""
+    self.vm = vm
+    self._result = {}
+
+  def run(self):
+    """Execute the VM checks."""
+    checks = [check(self.vm) for check in _VM_CHECKS]
+    self._result = self._run_checks(checks)
+
+  def result(self):
+    """Return the result of the task."""
+    return {self.vm.vm_name : self._result}
+
+  @classmethod
+  def get_jobs(cls, data_collection):
+    """Get the jobs for checking a VM.
+
+    This generator will return a job for each VM object within the cluster.
+
+    Args:
+      data_collection: The data path.
+    """
+    cluster = xcluster.Cluster(data_collection=data_collection)
+    for vm in cluster.vms.values():
+      yield CheckVM(vm)
+
+
+@TASKS.add_task(0)
+class CheckNode(task.WReportTask):
+  """Methods for executing checks against a Node object."""
+
+  _name = "Node"
+
+  def __init__(self, node):
+    """Initialize a task to run checks."""
+    self.node = node
+    self._result = {}
+
+  def run(self):
+    """Execute the Node checks."""
+    checks = [check(self.node) for check in _NODE_CHECKS]
+    self._result = self._run_checks(checks)
+
+  def result(self):
+    """Return the result of the task."""
+    return {self.node.cvm_ip : self._result}
+
+  @classmethod
+  def get_jobs(cls, data_collection):
+    """Get the jobs for checking a Node.
+
+    This generator will return a job for each Node object within the cluster.
+
+    Args:
+      data_collection: The data path.
+    """
+    cluster = xcluster.Cluster(data_collection=data_collection)
+    for node in cluster.nodes.values():
+      yield CheckNode(node)
+
+@TASKS.add_task(1)
+class CheckCluster(task.WReportTask):
+  """Methods for executing checks against the cluster.
+
+  Some of these may be dependent on Node, VM, or VDisk checks, so they should be
+  ran after those checks.
+  """
+
+  _name = "Cluster"
+
+  def __init__(self, cluster):
+    """Initialize a tas to run checks."""
+    self.cluster = cluster
+    self._result = {}
+
+  def run(self):
+    """Execute the Cluster checks."""
+    checks = [check(self.cluster) for check in _CLUSTER_CHECKS]
+    self._results = self._run_checks(checks)
+
+  def result(self):
+    """Return the result of the task."""
+    return {self.node.cvm_ip : self._result}
+
+
 class WeatherReport(object):
   """Methods for executing checks and accessing their results."""
-  _VDISK_CHECKS = [storage.VDiskColdTierReads]
-  _VM_CHECKS = []
-  _NODE_CHECKS = [health.NodeStargateRestarts,
-                  oplog.NodeBusyOplogCount,
-                  oplog.VDiskLogicalOplogLimit,
-                  metadata.NodeMedusaLatCost,
-                  cpu.NodeHostCpuUtil,
-                  cpu.NodeHostCpuUtilInbalance,
-                  cpu.NodeCvmCpuReady,
-                  cpu.NodeCvmCpuUsage]
-  _CLUSTER_CHECKS = []
+
 
   def __init__(self, data_collection, proc_cnt=None, regen=False):
     """Create a Weather Report for a specfic data_collection.
@@ -63,83 +193,39 @@ class WeatherReport(object):
     self._info = None
     # Try to read pickled data if there or regenerate it.
     if regen or not os.path.isfile(self._pickled_results_path):
-      self._raw_results = None
+      self._raw_results = []
     else:
       with open(self._pickled_results_path, "r") as pickled_wreport:
         self._raw_results = pickle.load(pickled_wreport)
 
+  def _process_job(self, job):
+    """Executation wrapper for Running a job."""
+    job.run()
+    return job.result
+
+  def _job_callback(self, result):
+    """Callback used by jobs to update the results."""
+    self._raw_results.append(result)
+
   @property
   def raw_results(self):
     """Runs and returns a list of dicts containing all unadulterated results."""
-    if self._raw_results is None:
-      if self._proc_cnt is not None:
-        pool = mp.Pool(processes=self._proc_cnt)
-        self._raw_results = pool.map(
-            self._check_vdisk, self.cluster.vdisks.values())
-        # self._raw_results.extend(
-        #     pool.map(self._check_vm, self.cluster.vms.values()))
-        self._raw_results.extend(
-            pool.map(self._check_node, self.cluster.nodes.values()))
-        pool.close()
-        pool.join()
-      else:
-        self._raw_results = [self._check_vdisk(vdisk) for vdisk in \
-            self.cluster.vdisks.values()]
-        # self._raw_results.extend(
-        #     [self._check_vms) for vm in self.cluster.vms.values()])
-        self._raw_results.extend(
-            [self._check_node(node) for node in self.cluster.nodes.values()])
-      # Save our work.
-      with open(self._pickled_results_path, "w") as pickled_wreport:
-        pickle.dump(self._raw_results, pickled_wreport)
+    if self._raw_results is []:
+      for level in sorted(TASKS.keys()):
+        if self._proc_cnt is not None:
+          pool = mp.Pool(processes=self._proc_cnt)
+          for task in TASKS[level]:
+            for job in task.get_jobs(self._dc_path):
+              pool.apply_async(
+                  self._process_job, (job,), callback=self._job_callback)
+          pool.close()
+          pool.join()
+        else:
+          for task in TASKS[level]:
+            for job in task.get_jobs(self._dc_path):
+              job.run()
+              self._raw_results.append(job.result())
     return self._raw_results
-
-  def _check_vdisk(self, vdisk):
-    """Run all VDisk checks against an instance and return a dict of results.
-
-    Args:
-      vdisk: A gnosis.explore.vdisk.VDisk object.
-    """
-    checks = [check(vdisk) for check in self._VDISK_CHECKS]
-    return {vdisk.vdisk_id : self._run_checks(checks)}
-
-  def _check_vm(self, vm):
-    """Run all VM checks against an instance and return a dict of results.
-
-    Args:
-      vm: A gnosis.explore.vm.Vm object.
-    """
-    checks = [check(vm) for check in self._VM_CHECKS]
-    return {vm.name : self._run_checks(checks)}
-
-  def _check_node(self, node):
-    """Run all Node checks against an instance and return a dict of results.
-
-    Args:
-      node: A gnosis.explore.node.Node object.
-    """
-    checks = [check(node) for check in self._NODE_CHECKS]
-    return {node.cvm_ip : self._run_checks(checks)}
-
-  def _run_checks(self, checks):
-    """Run a list of checks.
-
-    Args:
-      checks: A list of instantiated check instances.
-    """
-    result = {}
-    for check in checks:
-      try:
-        check_result = check.run_check()
-      except ZeroDivisionError:
-        # Assumes no activity and defaults to pass.
-        check_result = {"status" : 0, "criteria" : None}
-      except Exception as e:
-        # TODO: logging
-        # 3 is Unknown
-        check_result = {"status" : 3, "criteria" : "UNKNOWN", "exception" : e}
-      result[check.__class__.__name__] = check_result
-    return result
 
   @property
   def info(self):
@@ -194,8 +280,7 @@ class WeatherReport(object):
           elif 3 > result["status"] > grouped_dict[check_name]["group_status"]:
             grouped_dict[check_name]["group_status"] = result["status"]
     # Adds the title and documentation to the checks.
-    for check in self._VDISK_CHECKS + self._VM_CHECKS + self._NODE_CHECKS + \
-        self._CLUSTER_CHECKS:
+    for check in _VDISK_CHECKS + _VM_CHECKS + _NODE_CHECKS + _CLUSTER_CHECKS:
       if check.__name__ in grouped_dict.keys():
         grouped_dict[check.__name__]["title"] = check.TITLE
         grouped_dict[check.__name__]["doc"] = check.DOC
