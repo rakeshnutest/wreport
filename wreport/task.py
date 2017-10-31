@@ -72,7 +72,6 @@ class WReportTask(object):
     """
     raise NotImplementedError()
 
-  @property
   def result(self):
     """Get result for running task.
 
@@ -84,7 +83,7 @@ class WReportTask(object):
     """
     return None
 
-  def _run_checks(checks):
+  def _run_checks(self, checks):
     """Run a list of checks.
 
     Args:
@@ -124,5 +123,5 @@ class WReportTask(object):
     Args:
       data_dir: Path to location of data.
     """
-    yield cls(data_dir)
+    yield cls(data_collection)
 

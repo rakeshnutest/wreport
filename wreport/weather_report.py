@@ -201,7 +201,7 @@ class WeatherReport(object):
   def _process_job(self, job):
     """Executation wrapper for Running a job."""
     job.run()
-    return job.result
+    return job.result()
 
   def _job_callback(self, result):
     """Callback used by jobs to update the results."""
@@ -210,21 +210,22 @@ class WeatherReport(object):
   @property
   def raw_results(self):
     """Runs and returns a list of dicts containing all unadulterated results."""
-    if self._raw_results is []:
-      for level in sorted(TASKS.keys()):
+    if not self._raw_results:
+      tasks = TASKS.get_tasks()
+      for level in sorted(tasks.keys()):
         if self._proc_cnt is not None:
           pool = mp.Pool(processes=self._proc_cnt)
-          for task in TASKS[level]:
+          for task in tasks[level]:
             for job in task.get_jobs(self._dc_path):
               pool.apply_async(
                   self._process_job, (job,), callback=self._job_callback)
           pool.close()
           pool.join()
         else:
-          for task in TASKS[level]:
+          for task in tasks[level]:
             for job in task.get_jobs(self._dc_path):
               job.run()
-              self._raw_results.append(job.result())
+              self._raw_results.append(job.result)
     return self._raw_results
 
   @property
