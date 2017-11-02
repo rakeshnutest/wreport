@@ -40,10 +40,6 @@ _CLUSTER_CHECKS = []
 # ------------------------------------------------------------------------------
 # Global task container.
 TASKS = task.Tasks()
-# limit default process count.
-PROC_COUNT = mp.cpu_count() / 2
-if PROC_COUNT < 1:
-  PROC_COUNT = 1
 # Allows you to pass instance methods to processes.
 def _pickle_method(method):
   if method.im_self is None:
@@ -188,8 +184,8 @@ class WeatherReport(object):
 
     Args:
       data_collection: The path to the consolidated collect_perf data.
-      proc_cnt: The number of processes to use when running checks. If None, all
-        checks will be executed in a single thread.
+      proc_cnt: The number of processes to use when running checks. If None or
+        1, all checks will be executed in a single thread.
       regen: Whether or not to regenerate the results if they already exist.
     """
     self._dc_path = data_collection
@@ -219,7 +215,7 @@ class WeatherReport(object):
     if not self._raw_results:
       tasks = TASKS.get_tasks()
       for level in sorted(tasks.keys()):
-        if self._proc_cnt is not None:
+        if self._proc_cnt is not None or self._proc_cnt != 1:
           pool = mp.Pool(processes=self._proc_cnt)
           for task in tasks[level]:
             for job in task.get_jobs(self._dc_path):
@@ -314,6 +310,10 @@ class WeatherReport(object):
       print
 
 if __name__ == "__main__":
+  # limit default process count.
+  PROC_COUNT = mp.cpu_count() / 2
+  if PROC_COUNT < 1:
+    PROC_COUNT = 1
   parser = argparse.ArgumentParser(
       prog="Weather Report",
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
