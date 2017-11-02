@@ -1,4 +1,5 @@
-# Copyright (c) 2015 Nutanix Inc.  All rights reserved.
+#!/usr/bin/env python
+# Copyright (c) 2015-2017 Nutanix Inc.  All rights reserved.
 #
 # Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com\
 #
@@ -7,7 +8,6 @@
 The Weather Report is a tool that runs various performance related checks in
 an effort to identify common issues that have a known impact on performance.
 """
-
 import argparse
 import copy_reg
 import multiprocessing as mp
@@ -24,7 +24,8 @@ from wreport.checks import metadata
 from wreport.checks import oplog
 from wreport.checks import storage
 
-
+# ------------------------------------------------------------------------------
+# The checks to perform based on the object.
 _VDISK_CHECKS = [storage.VDiskColdTierReads]
 _VM_CHECKS = []
 _NODE_CHECKS = [health.NodeStargateRestarts,
@@ -36,8 +37,13 @@ _NODE_CHECKS = [health.NodeStargateRestarts,
                 cpu.NodeCvmCpuReady,
                 cpu.NodeCvmCpuUsage]
 _CLUSTER_CHECKS = []
+# ------------------------------------------------------------------------------
+# Global task container.
 TASKS = task.Tasks()
-
+# limit default process count.
+PROC_COUNT = mp.cpu_count() / 2
+if PROC_COUNT < 1:
+  PROC_COUNT = 1
 # Allows you to pass instance methods to processes.
 def _pickle_method(method):
   if method.im_self is None:
@@ -308,11 +314,6 @@ class WeatherReport(object):
       print
 
 if __name__ == "__main__":
-  # limit default process count.
-  PROC_COUNT = mp.cpu_count() / 2
-  if PROC_COUNT < 1:
-    PROC_COUNT = 1
-
   parser = argparse.ArgumentParser(
       prog="Weather Report",
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
