@@ -15,7 +15,10 @@ class NodeMedusaLatCost(base.BaseCheck):
   watermarks to evaluate the contribution to the total response time.
   """
   TITLE = "Metadata Resolution"
-  DOC = "some_url"
+  DOC = """This check evaluates the contribution of metadata lookups to the
+  overall response time. This is an indicator that the CVM's memory allocation
+  may need to be increased, that the guests are reading a large working set or
+  tunning between the types of data being cached is needed."""
   _MSG = "Metadata resolution exceeded {0}MS and accounted for more than {1}%" \
       " of the total resposne time."
   # Response time threshold in usecs.
@@ -59,4 +62,3 @@ class NodeMedusaLatCost(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
-  

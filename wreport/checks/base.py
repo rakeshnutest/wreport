@@ -10,7 +10,7 @@ class BaseCheck(object):
   """The base check structure."""
   # The display name for the check.
   TITLE = ""
-  # A URL for linked documentation.
+  # Text describing the check.
   DOC = ""
   # The message to display, ideally with the criteria used.
   _MSG = ""
@@ -35,6 +35,6 @@ class BaseCheck(object):
 
   # All Checks should include a run_check method that returns the result.
   def run_check(self):
-    """Execute the check and return the expected dictionary."""
-    return self.result
+    """Execute the check and return the results dictionary."""
+    raise NotImplementedError()
 

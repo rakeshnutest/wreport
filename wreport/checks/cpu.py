@@ -11,7 +11,8 @@ class NodeCvmCpuUsage(base.BaseCheck):
   The evaluation is based on the upper quartile.
   """
   TITLE = "CVM CPU Usage"
-  DOC = "some_url"
+  DOC = """This check evaluates the CVM's CPU utilization. If the CPU utization
+  is excessive it could be a limting factor to performance."""
   _MSG = "Average utilization: {0:.1f}%, exceeded {1}% of total."
   _SFT_WTRMRK = .75
   _HRD_WTRMRK = .9
@@ -39,7 +40,11 @@ class NodeCvmCpuReady(base.BaseCheck):
   The evaluation is based on the upper quartile.
   """
   TITLE = "CVM CPU Ready"
-  DOC = "some_url"
+  DOC = """This check evaluates the percentage of time the CVM spent waiting to
+  be scheduled (%Ready), but couldn't be due to contention. This is an
+  indicator that the CVM may be getting starved for CPU or that the CVM is
+  consuming a lot of CPU time.
+  """
   _MSG = "Average % Ready: {0:.1f}%, exceeded {1}%."
   _SFT_WTRMRK = 3
   _HRD_WTRMRK = 5
@@ -65,7 +70,9 @@ class NodeHostCpuUtilInbalance(base.BaseCheck):
   Checks for an inbalance in physical CPU utilization per-socket.
   """
   TITLE = "Host CPU Utilization Balance"
-  DOC = "some_url"
+  DOC = """This check evaluates the balance of CPU utilization.  An inbalance of
+  CPU utilization is an indicator of a hot guest. The workload on the guest
+  driving the utilization should be evaluated."""
   _MSG = "Mean utilizaiton: {0}, Cv: {1}, exceeded {2}."
   _SFT_WTRMRK = .5
   _HRD_WTRMRK = .75
@@ -115,7 +122,9 @@ class NodeHostCpuUtil(base.BaseCheck):
   The evaluation is based on the upper quartile.
   """
   TITLE = "Host CPU Usage"
-  DOC = "some_url"
+  DOC = """This check evaluates the host's CPU utilization. If the CPU utization
+  is excessive it could be a limting factor to performance. If possible,
+  consider moving some guests to another node."""
   _MSG = "Average utilization: {0:.1f}%, exceeded {1}%."
   _SFT_WTRMRK = 75
   _HRD_WTRMRK = 90
@@ -134,4 +143,3 @@ class NodeHostCpuUtil(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
-

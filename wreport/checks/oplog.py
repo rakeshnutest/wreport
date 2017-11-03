@@ -11,15 +11,12 @@ from wreport.checks import base
 
 
 class NodeBusyOplogCount(base.BaseCheck):
-  """Counts the number of heavily utilized  VDisk oplogs for the node.
-
-  If only one VDisk's oplog is heavily utilized it may indicate a need to split
-  those VDisks into multple.  If there are more than one and four or less, it's
-  likely not an issue, but something to look at.
-  """
+  """Counts the number of heavily utilized  VDisk oplogs for the node."""
   # TODO: This should be VM aware (PERF-875 and PERF-876)
   TITLE = "Busy Oplog Check"
-  DOC = "some_url"
+  DOC = """If only a few VDisk's have heavily utilized oplogs it may indicate a
+  need to split those VDisks into multple.  If there are more than one, but less
+  than four or less, it's likely not an issue, but something to look at."""
   _MSG = "Only {0} VDisk oplog(s) are heavily utilized."
   # If only one vdisk has a busy vdisk we should look at BPGs.
   _CNT_HRD_WTRMRK = 1
@@ -65,7 +62,10 @@ class NodeBusyOplogCount(base.BaseCheck):
 class VDiskLogicalOplogLimit(base.BaseCheck):
   """Logical Oplog Limit Check."""
   TITLE = "Virtual-Disk Logical Oplog Limit"
-  DOC = "some_url"
+  DOC = """If a VDisk is reacing it's logical limit it indicats that a guest is
+  writting a lot of data and/or the underlying disk system is unable to keep up.
+  If there are no signs of disk pressure, consider splitting this disk into
+  multiple."""
   _MSG = "VDisk ID {0}: Within {1}% of logical limit {2} times."
   _WTRMRK = .90
 
@@ -96,4 +96,3 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
-
