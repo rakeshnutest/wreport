@@ -10,21 +10,8 @@ class Tasks(object):
   The expected usage is that a module will create a global TASKS object, then
   use add_tasks as a decorator.
 
-  Tasks with the same level may be run in parallel. The tasks for each level will
-  be run serially in the order of the level.
-
-  Example:
-
-  TASKS = tasks.Tasks()
-
-  # Add a 0 level task.
-  @TASKS.add_task(0)
-  def foo():
-    print "foo"
-
-  @TASKS.add_task(1)
-  def foo():
-    print "foo"
+  Tasks with the same level may be run in parallel. The tasks for each level
+  will be run serially in the order of the level.
   """
 
   def __init__(self):

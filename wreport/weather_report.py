@@ -168,11 +168,11 @@ class CheckCluster(task.WReportTask):
   def run(self):
     """Execute the Cluster checks."""
     checks = [check(self.cluster) for check in _CLUSTER_CHECKS]
-    self._results = self._run_checks(checks)
+    self._result = self._run_checks(checks)
 
   def result(self):
     """Return the result of the task."""
-    return {self.node.cvm_ip : self._result}
+    return {"Cluster" : self._result}
 
 
 class WeatherReport(object):
@@ -217,17 +217,20 @@ class WeatherReport(object):
       for level in sorted(tasks.keys()):
         if self._proc_cnt is not None or self._proc_cnt != 1:
           pool = mp.Pool(processes=self._proc_cnt)
-          for task in tasks[level]:
-            for job in task.get_jobs(self._dc_path):
+          for task_obj in tasks[level]:
+            for job in task_obj.get_jobs(self._dc_path):
               pool.apply_async(
                   self._process_job, (job,), callback=self._job_callback)
           pool.close()
           pool.join()
         else:
-          for task in tasks[level]:
-            for job in task.get_jobs(self._dc_path):
+          for task_obj in tasks[level]:
+            for job in task_obj.get_jobs(self._dc_path):
               job.run()
               self._raw_results.append(job.result)
+      # Save our work.
+      with open(self._pickled_results_path, "w") as pickled_wreport:
+        pickle.dump(self._raw_results, pickled_wreport)
     return self._raw_results
 
   @property
