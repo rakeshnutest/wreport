@@ -12,7 +12,9 @@ class NodeCvmCpuUsage(base.BaseCheck):
   """
   TITLE = "CVM CPU Usage"
   DOC = """This check evaluates the CVM's CPU utilization. If the CPU utization
-  is excessive it could be a limting factor to performance."""
+  is excessive it could be a performance inhibior. Consider increasing the 
+  CVM's vCPU allocation. Note, spanning NUMA boundaries generally not
+  recommended."""
   _MSG = "Average utilization: {0:.1f}%, exceeded {1}% of total."
   _SFT_WTRMRK = .75
   _HRD_WTRMRK = .9
@@ -42,8 +44,9 @@ class NodeCvmCpuReady(base.BaseCheck):
   TITLE = "CVM CPU Ready"
   DOC = """This check evaluates the percentage of time the CVM spent waiting to
   be scheduled (%Ready), but couldn't be due to contention. This is an
-  indicator that the CVM may be getting starved for CPU or that the CVM is
-  consuming a lot of CPU time.
+  indicator that the CVM may be getting starved for CPU time or that the CVM is
+  consuming a lot of CPU time. Ensure the CVM's vCPUs are affinitized to one
+  socket and consider moving busy VMs to less busy hosts.
   """
   _MSG = "Average % Ready: {0:.1f}%, exceeded {1}%."
   _SFT_WTRMRK = 3
@@ -71,8 +74,9 @@ class NodeHostCpuUtilInbalance(base.BaseCheck):
   """
   TITLE = "Host CPU Utilization Balance"
   DOC = """This check evaluates the balance of CPU utilization.  An inbalance of
-  CPU utilization is an indicator of a hot guest. The workload on the guest
-  driving the utilization should be evaluated."""
+  CPU utilization is an indicates a hot guest. The workload on the guest
+  driving the utilization should be evaluated and splitting it across multiple
+  VMs should be considered."""
   _MSG = "Mean utilizaiton: {0}, Cv: {1}, exceeded {2}."
   _SFT_WTRMRK = .5
   _HRD_WTRMRK = .75
@@ -143,3 +147,4 @@ class NodeHostCpuUtil(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
+

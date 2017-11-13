@@ -13,9 +13,11 @@ class VDiskColdTierReads(base.BaseCheck):
   reads exceeds the watermark and the frequency exceeds the same ratio the test
   criteria has been met."""
   TITLE = "Virtual-Disk Cold Tier Reads"
-  DOC = """Cold-tier reads are bad, umm-kay. Although a big contributor to
-  response time, the cause should be investigated. This could be result of a
-  large ingestion of data or due to the access patterns."""
+  DOC = """If the workload is being serviced from the cold-tier it is likely
+  a big contributor to the observed response time, however, it's important to
+  understand the cause as it could have been the result of ingesting a lot of
+  data, due to the access patterns, or that the working set has exceeded the
+  hot-tier."""
   _MSG = "Exceeded {0}%, {1} times."
   # Warning watermark.
   _SFT_WTRMRK = .25
@@ -60,3 +62,4 @@ class VDiskColdTierReads(base.BaseCheck):
           self._SFT_WTRMRK * 100, len(data[data > self._SFT_WTRMRK]))
     else:
       self.result["status"] = 0
+
