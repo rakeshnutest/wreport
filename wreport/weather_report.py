@@ -272,7 +272,7 @@ class WeatherReport(object):
     """
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
-    for obj_results_dict in report.raw_results:
+    for obj_results_dict in self.raw_results:
       for obj_id, results_dict in obj_results_dict.items():
         # The results_dict is nested dictionary keyed by test name.
         for check_name, result in results_dict.items():
