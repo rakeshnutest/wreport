@@ -69,6 +69,7 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
   _MSG = "VDisk ID {0}: Within {1}% of logical limit {2} times."
   _WTRMRK = .90
 
+  # pylint: disable=super-init-not-called
   def __init__(self, node):
     """Instatiate a check instance and override BaseCheck."""
     self._node = node

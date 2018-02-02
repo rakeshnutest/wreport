@@ -59,6 +59,7 @@ class WReportTask(object):
     """
     raise NotImplementedError()
 
+  # pylint: disable=no-self-use
   def result(self):
     """Get result for running task.
 
@@ -70,6 +71,8 @@ class WReportTask(object):
     """
     return None
 
+  # pylint: disable=no-self-use
+  # pylint: disable=broad-except
   def _run_checks(self, checks):
     """Run a list of checks.
 
