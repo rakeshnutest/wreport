@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2015-2017 Nutanix Inc.  All rights reserved.
 #
-# Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com\
+# Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com
 #
 """The Weather Report tool.
 
@@ -25,7 +25,7 @@ from wreport.checks import oplog
 from wreport.checks import storage
 
 # ------------------------------------------------------------------------------
-# The checks to perform based on the object.
+# The checks to perform based on their respecitve objects.
 _VDISK_CHECKS = [storage.VDiskColdTierReads]
 _VM_CHECKS = []
 _NODE_CHECKS = [health.NodeStargateRestarts,
@@ -256,35 +256,64 @@ class WeatherReport(object):
     print "Hot/Cold Tier Size: {0} / {1}".format(
         self.cluster.hot_tier_size, self.cluster.cold_tier_size)
 
+  def _group_results(self):
+    """Group the raw results by name and determine the overall status code.
+
+    Group Status Codes:
+      3: The check failed against all objects. This is likely a systemic data or
+        code related issue.
+      2: The test executed and at least one object warrents further
+        investigation.
+      1: The test executed and at least one object was flagged as interesting.
+        This status is also used when some objets failed to execute while others
+        passed. When this occures it it likely the result of that specific
+        objects data set instead of a systemic data or test issue.
+      0: The test executed and all objects tested passed.
+    """
+    grouped_dict = {}
+    # The raw results are a list of nested dictionaries.
+    for obj_results_dict in report.raw_results:
+      for obj_id, results_dict in obj_results_dict.items():
+        # The results_dict is nested dictionary keyed by test name.
+        for check_name, result in results_dict.items():
+          if check_name not in grouped_dict.keys():
+            grouped_dict[check_name] = {"status_list" : []}
+          grouped_dict[check_name]["status_list"].append(result["status"])
+          grouped_dict[check_name][obj_id] = result
+    for check, results_dict in grouped_dict.items():
+      results_dict["group_status"] = max(results_dict["status_list"])
+      # Complete failure of test across all objects.
+      if all([status == 3 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 3
+      # At least one object was found to be worth investigation.
+      elif any([status == 2 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 2
+      # At least one object was found to be interesting.
+      elif any([status == 1 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 1
+      # Everything passed.
+      elif all([status == 0 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 0
+      # At least one object failed to execute the check.
+      else:
+        results_dict["group_status"] = 1
+    return grouped_dict
+
   def get_results(self, status_filter=[0, 1, 2, 3]):
-    """Return a dictionry of results that are grouped by the check name.
+    """Return a filtered dict of results that are grouped by the check name.
 
     Args:
       status_filter (list): Only return results with these status codes.
     """
-    grouped_dict = {}
-    # The raw results are a list of nested dictionaries.
-    for obj_results_dict in self.raw_results:
-      for obj_id, results_dict in obj_results_dict.items():
-        # The results_dict is nested dictionary keyed by test name.
-        for check_name, result in results_dict.items():
-          # Filter out stuff we don't want.
-          if result["status"] not in status_filter:
-            continue
-          if check_name not in grouped_dict.keys():
-            # The group_status key is used to track the worst result found.
-            grouped_dict[check_name] = {"group_status" : result["status"]}
-          grouped_dict[check_name][obj_id] = result
-          # A status of 3 indicates that the check threw an exception, if other
-          # objects tested successfully then it's object specific and we want to
-          # replace the global status  with that of a successful check.
-          # Otherwise, "unknown" status will be maintained, indicating a
-          # sysmtemic issue.
-          if result["status"] < 3 and \
-              grouped_dict[check_name]["group_status"] == 3:
-            grouped_dict[check_name]["group_status"] = result["status"]
-          elif 3 > result["status"] > grouped_dict[check_name]["group_status"]:
-            grouped_dict[check_name]["group_status"] = result["status"]
+    grouped_dict = self._group_results()
+    for check, results_dict in grouped_dict.items():
+      if results_dict["group_status"] not in status_filter:
+        grouped_dict.pop(check)
+      for obj, result in results_dict.items():
+        if not isinstance(result, dict):
+          continue
+        if result["status"] not in status_filter:
+          results_dict.pop(obj)
     # Adds the title and documentation to the checks.
     for check in _VDISK_CHECKS + _VM_CHECKS + _NODE_CHECKS + _CLUSTER_CHECKS:
       if check.__name__ in grouped_dict.keys():
@@ -346,4 +375,3 @@ if __name__ == "__main__":
     report.print_info()
     print
     report.print_results()
-
