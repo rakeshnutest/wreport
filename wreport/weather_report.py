@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2015-2017 Nutanix Inc.  All rights reserved.
 #
-# Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com\
+# Aurthor: Dan.Small@nutanix.com, GDowding@nutanix.com
 #
 """The Weather Report tool.
 
@@ -25,7 +25,7 @@ from wreport.checks import oplog
 from wreport.checks import storage
 
 # ------------------------------------------------------------------------------
-# The checks to perform based on the object.
+# The checks to perform based on their respecitve objects.
 _VDISK_CHECKS = [storage.VDiskColdTierReads]
 _VM_CHECKS = []
 _NODE_CHECKS = [health.NodeStargateRestarts,
@@ -40,7 +40,13 @@ _CLUSTER_CHECKS = []
 # ------------------------------------------------------------------------------
 # Global task container.
 TASKS = task.Tasks()
+# Limit default process count. Used when called as script.
+PROC_COUNT = mp.cpu_count() / 2
+if PROC_COUNT < 1:
+  PROC_COUNT = 1
+
 # Allows you to pass instance methods to processes.
+# pylint: disable=no-else-return
 def _pickle_method(method):
   if method.im_self is None:
     return getattr, (method.im_class, method.im_func.func_name)
@@ -200,6 +206,7 @@ class WeatherReport(object):
       with open(self._pickled_results_path, "r") as pickled_wreport:
         self._raw_results = pickle.load(pickled_wreport)
 
+  # pylint: disable=no-self-use
   def _process_job(self, job):
     """Executation wrapper for Running a job."""
     job.run()
@@ -238,7 +245,7 @@ class WeatherReport(object):
     """Return a dictionary of pertinent cluster information."""
     info = dict(cluster_id=self.cluster.cluster_id,
                 cluster_name=self.cluster.cluster_name,
-                aos_ver=self.cluster.release_version[:45],
+                aos_ver=str(self.cluster.release_version)[:45],
                 node_count=len(self.cluster.nodes),
                 hot_tier_size=self.cluster.hot_tier_size,
                 cold_tier_size=self.cluster.cold_tier_size,
@@ -250,17 +257,25 @@ class WeatherReport(object):
     """Print cluster information."""
     print "Cluster ID: {0} - Name: {1}".format(
         self.cluster.cluster_id, self.cluster.cluster_name)
-    print "AOS Release: {0}".format(self.cluster.release_version[:45])
+    print "AOS Release: {0}".format(str(self.cluster.release_version)[:45])
     print "{0} Nodes - {1} UVMs".format(
         len(self.cluster.nodes), len(self.cluster.vms))
     print "Hot/Cold Tier Size: {0} / {1}".format(
         self.cluster.hot_tier_size, self.cluster.cold_tier_size)
 
-  def get_results(self, status_filter=[0, 1, 2, 3]):
-    """Return a dictionry of results that are grouped by the check name.
+  def _group_results(self):
+    """Group the raw results by name and determine the overall status code.
 
-    Args:
-      status_filter (list): Only return results with these status codes.
+    Group Status Codes:
+      3: The check failed against all objects. This is likely a systemic data or
+        code related issue.
+      2: The test executed and at least one object warrents further
+        investigation.
+      1: The test executed and at least one object was flagged as interesting.
+        This status is also used when some objets failed to execute while others
+        passed. When this occures it it likely the result of that specific
+        objects data set instead of a systemic data or test issue.
+      0: The test executed and all objects tested passed.
     """
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
@@ -268,23 +283,46 @@ class WeatherReport(object):
       for obj_id, results_dict in obj_results_dict.items():
         # The results_dict is nested dictionary keyed by test name.
         for check_name, result in results_dict.items():
-          # Filter out stuff we don't want.
-          if result["status"] not in status_filter:
-            continue
           if check_name not in grouped_dict.keys():
-            # The group_status key is used to track the worst result found.
-            grouped_dict[check_name] = {"group_status" : result["status"]}
+            grouped_dict[check_name] = {"status_list" : []}
+          grouped_dict[check_name]["status_list"].append(result["status"])
           grouped_dict[check_name][obj_id] = result
-          # A status of 3 indicates that the check threw an exception, if other
-          # objects tested successfully then it's object specific and we want to
-          # replace the global status  with that of a successful check.
-          # Otherwise, "unknown" status will be maintained, indicating a
-          # sysmtemic issue.
-          if result["status"] < 3 and \
-              grouped_dict[check_name]["group_status"] == 3:
-            grouped_dict[check_name]["group_status"] = result["status"]
-          elif 3 > result["status"] > grouped_dict[check_name]["group_status"]:
-            grouped_dict[check_name]["group_status"] = result["status"]
+    for results_dict in grouped_dict.values():
+      results_dict["group_status"] = max(results_dict["status_list"])
+      # Complete failure of test across all objects.
+      if all([status == 3 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 3
+      # At least one object was found to be worth investigation.
+      elif any([status == 2 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 2
+      # At least one object was found to be interesting.
+      elif any([status == 1 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 1
+      # Everything passed.
+      elif all([status == 0 for status in results_dict["status_list"]]):
+        results_dict["group_status"] = 0
+      # At least one object failed to execute the check.
+      else:
+        results_dict["group_status"] = 1
+    return grouped_dict
+
+  def get_results(self, status_filter=None):
+    """Return a filtered dict of results that are grouped by the check name.
+
+    Args:
+      status_filter (list): Only return results with these status codes.
+    """
+    grouped_dict = self._group_results()
+    # Maybe filter results.
+    if status_filter is not None:
+      for check, results_dict in grouped_dict.items():
+        if results_dict["group_status"] not in status_filter:
+          grouped_dict.pop(check)
+        for obj, result in results_dict.items():
+          if not isinstance(result, dict):
+            continue
+          if result["status"] not in status_filter:
+            results_dict.pop(obj)
     # Adds the title and documentation to the checks.
     for check in _VDISK_CHECKS + _VM_CHECKS + _NODE_CHECKS + _CLUSTER_CHECKS:
       if check.__name__ in grouped_dict.keys():
@@ -305,18 +343,18 @@ class WeatherReport(object):
       for obj, result in check_results.items():
         if obj == "doc":
           continue
-        if isinstance(result, list):
-          print "\t{0}: {1}".format(obj, "\n".join(result["criteria"]))
-        elif isinstance(result, dict):
+        if isinstance(result, dict):
+          if not result.has_key("criteria"):
+            continue
+          if isinstance(result["criteria"], list):
+            print "\t{}".format("\t".join("\n".join(result["criteria"])))
           if result["criteria"] is not None:
             print "\t{0}: {1}".format(obj, result["criteria"])
       print
 
-if __name__ == "__main__":
-  # limit default process count.
-  PROC_COUNT = mp.cpu_count() / 2
-  if PROC_COUNT < 1:
-    PROC_COUNT = 1
+
+def main():
+  """Main function used when executing as a script."""
   parser = argparse.ArgumentParser(
       prog="Weather Report",
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -340,10 +378,13 @@ if __name__ == "__main__":
                          proc_cnt=int(args.proc_cnt),
                          regen=args.regen)
   if args.quiet:
-    # This property will execute the checks if needed.
-    results = report.raw_results
+    # Just execute the checks.
+    report.get_results()
   else:
     report.print_info()
     print
     report.print_results()
+
+if __name__ == "__main__":
+  main()
 
