@@ -166,9 +166,9 @@ class CheckCluster(task.WReportTask):
 
   _name = "Cluster"
 
-  def __init__(self, cluster):
-    """Initialize a tas to run checks."""
-    self.cluster = cluster
+  def __init__(self, data_collection):
+    """Initialize a task to run checks."""
+    self.cluster = xcluster.Cluster(data_collection=data_collection)
     self._result = {}
 
   def run(self):
