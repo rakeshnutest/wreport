@@ -199,6 +199,8 @@ class WeatherReport(object):
     self._pickled_results_path = os.path.join(self._dc_path, "wreport.p")
     self._proc_cnt = proc_cnt
     self._info = None
+    # self._raw_results = []
+    if not regen or
     # Try to read pickled data if there or regenerate it.
     if regen or not os.path.isfile(self._pickled_results_path):
       self._raw_results = []
@@ -275,7 +277,8 @@ class WeatherReport(object):
         This status is also used when some objets failed to execute while others
         passed. When this occures it it likely the result of that specific
         objects data set instead of a systemic data or test issue.
-      0: The test executed and all objects tested passed.
+      0: The test executed and all objects tested passed, or some passed while
+        others threw an exception.
     """
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
@@ -298,12 +301,10 @@ class WeatherReport(object):
       # At least one object was found to be interesting.
       elif any([status == 1 for status in results_dict["status_list"]]):
         results_dict["group_status"] = 1
-      # Everything passed.
-      elif all([status == 0 for status in results_dict["status_list"]]):
-        results_dict["group_status"] = 0
-      # At least one object failed to execute the check.
+      # Everything passed, or some threw an exception. This can happen when data
+      # is missing form some objects, e.g., a node without vdisks data in hvars.
       else:
-        results_dict["group_status"] = 1
+        results_dict["group_status"] = 0
     return grouped_dict
 
   def get_results(self, status_filter=None):
