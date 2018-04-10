@@ -5,7 +5,6 @@
 import unittest
 
 import mock
-import numpy as np
 import pandas as pd
 
 from gnosis.utils import AttrDict

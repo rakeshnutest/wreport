@@ -8,5 +8,5 @@ setup(name="wreport",
       license="All Rights Reserved",
       packages=["wreport", "wreport.checks"],
       test_suite = "test",
-      install_requires=["pandas","nutbuf","ntnx-gnosis"],
+      install_requires=["pandas", "ntnx-gnosis", "plotly"],
       tests_require=["mock"])
