@@ -50,13 +50,13 @@ class VDiskColdTierReads(base.BaseCheck):
     Args:
       data: The data to evaluate.
     """
-    if len(data[data > self._HRD_WTRMRK]) / \
-        float(len(data)) > self._HRD_WTRMRK:
+    if len(data[data >= self._HRD_WTRMRK]) / \
+        float(len(data)) >= self._HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(
           self._HRD_WTRMRK * 100, len(data[data > self._HRD_WTRMRK]))
-    elif len(data[data > self._SFT_WTRMRK]) / \
-        float(len(data)) > self._SFT_WTRMRK:
+    elif len(data[data >= self._SFT_WTRMRK]) / \
+        float(len(data)) >= self._SFT_WTRMRK:
       self.result["status"] = 1
       self.result["criteria"] = self._MSG.format(
           self._SFT_WTRMRK * 100, len(data[data > self._SFT_WTRMRK]))

@@ -137,3 +137,4 @@ class TestWeatherReport(unittest.TestCase):
   def test_grp_res_mix_interesting_investigate(self, mock_WeatherReport):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["mix_interesting_investigate"]["group_status"] == 2)
+

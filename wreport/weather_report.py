@@ -199,8 +199,6 @@ class WeatherReport(object):
     self._pickled_results_path = os.path.join(self._dc_path, "wreport.p")
     self._proc_cnt = proc_cnt
     self._info = None
-    # self._raw_results = []
-    if not regen or
     # Try to read pickled data if there or regenerate it.
     if regen or not os.path.isfile(self._pickled_results_path):
       self._raw_results = []
