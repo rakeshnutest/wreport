@@ -11,8 +11,8 @@ stages:
     - docker
   <<: *requirements
   script:
-    - python -m covereage run --branch --source=wreport ./setup.py test
-    - python -m covereage report -m
+    - python -m coverage run --branch --source=wreport ./setup.py test
+    - python -m coverage report -m
 
 python2:
   image: python:2
