@@ -1,58 +1,28 @@
-image: python:2.7.11-onbuild
-
 stages:
-  - build
   - test
-  - deploy
 
-sdist:
-  stage: build
-  tags:
-    - docker
-  script: make sdist
-  artifacts:
-    paths:
-      - dist/
+.requirements: &requirements
+  before_script:
+    - pip install -r requirements.txt
 
-bdist:
-  stage: build
-  tags:
-    - docker
-  script: make bdist
-  artifacts:
-    paths:
-      - dist/
-
-apidoc:
-  stage: build
-  tags:
-    - docker
-  script: make apidoc
-  artifacts:
-    paths:
-      - apidoc/_build/html
-
-alldoc:
-  stage: build
-  tags:
-    - docker
-  script: make alldoc
-  artifacts:
-    paths:
-      - alldoc/_build/html
-
-test:
+.unit_test_template: &unit_test
   stage: test
   tags:
     - docker
-  script: make test
-  artifacts:
-    paths:
-      - htmlcov/
+  <<: *requirements
+  script:
+    - python -m covereage run --branch --source=wreport ./setup.py test
+    - python -m covereage report -m
+
+python2:
+  image: python:2
+<<: *unit_test
 
 pylint:
+  image: python:2
   stage: test
   tags:
     - docker
-  script: make pylint
-  allow_failure: true
+  <<: *requirements
+  script:
+    - pylint --rcfile=.pylintrc wreport
