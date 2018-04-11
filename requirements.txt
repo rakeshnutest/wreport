@@ -4,4 +4,4 @@ pylint>=1.5.4
 pandas==0.19.*
 -e git+http://gitlab-ee.rtp.nutanix.com/gdowding/nutbuf.git@master#egg=nutbuf
 -e git+http://gitlab.rtp.nutanix.com/ntnx/gnosis.git@master#egg=ntnx_gnosis
-
+plotly>=2.0.15
