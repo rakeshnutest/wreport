@@ -23,7 +23,7 @@ class NodeCvmCpuUsage(base.BaseCheck):
     """Evaluate CVMs CPU utilization."""
     cpu_max = self._obj.cvm_cpu_count * 100
     pct_used = self._obj.host_cvm_cpu_util.pct_used
-    avg = pct_used[pct_used > pct_used.describe().ix[
+    avg = pct_used[pct_used >= pct_used.describe().ix[
         "75%"]].describe().ix["mean"]
     if avg >= cpu_max * self._HRD_WTRMRK:
       self.result["status"] = 2
@@ -55,7 +55,7 @@ class NodeCvmCpuReady(base.BaseCheck):
   def run_check(self):
     """Evaluate CVMs CPU ready time."""
     pct_ready = self._obj.host_cvm_cpu_util.pct_ready
-    avg = pct_ready[pct_ready > pct_ready.describe().ix[
+    avg = pct_ready[pct_ready >= pct_ready.describe().ix[
         "75%"]].describe().ix["mean"]
     if avg >= self._obj.cvm_cpu_count * self._HRD_WTRMRK:
       self.result["status"] = 2
@@ -74,12 +74,12 @@ class NodeHostCpuUtilInbalance(base.BaseCheck):
   """
   TITLE = "Host CPU Utilization Balance"
   DOC = """This check evaluates the balance of CPU utilization.  An inbalance of
-  CPU utilization is an indicates a hot guest. The workload on the guest
-  driving the utilization should be evaluated and splitting it across multiple
-  VMs should be considered."""
+  CPU utilization indicates a hot guest. The workload on the guest driving the
+  utilization should be evaluated and split work across multiple VMs should be
+  considered."""
   _MSG = "Mean utilizaiton: {0}, Cv: {1}, exceeded {2}."
   _SFT_WTRMRK = .5
-  _HRD_WTRMRK = .75
+  _HRD_WTRMRK = .7
 
   def run_check(self):
     """Check for inbalances in CPU utilization."""
@@ -136,7 +136,7 @@ class NodeHostCpuUtil(base.BaseCheck):
   def run_check(self):
     """Evaluate CPU utilization."""
     df = self._obj.host_pcpu_util
-    df = df[df > df.describe().ix["75%"]].describe()
+    df = df[df >= df.describe().ix["75%"]].describe()
     avg = df.ix["mean"].mean()
     if avg >= self._HRD_WTRMRK:
       self.result["status"] = 2

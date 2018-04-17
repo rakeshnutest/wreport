@@ -37,17 +37,19 @@ class NodeBusyOplogCount(base.BaseCheck):
     # Group into vdisk IDs.
     groups = df.groupby("instance", axis=0)
     over_cnt = 0
+    # Count the number of VDisks over the usage threshold.
     for group_name, gdf in groups:
       # Skip the total instance.
       if group_name == "total":
         continue
-      # Count the number of VDisks over the usage threshold.
+      # Count the numbers samples over the usage threshold.
       over = (gdf.value.astype("float64") / 1024 ** 2 \
           > oplog_max * self._USAGE_WTRMRK).sum()
-      # Look at how often this is the case.  We probably don't care about
-      # isolated instances.
+      # Check the frequency this occurs.
       if over /  float(len(gdf.value)) > self._SAMPLE_WTRMRK:
         over_cnt += 1
+    # Look at how often this is the case.  We probably don't care about
+    # isolated instances.
     if over_cnt == self._CNT_HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(over_cnt)

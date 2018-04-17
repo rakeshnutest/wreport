@@ -13,8 +13,8 @@ sys.path.append(py_directory)
 
 # Set up logging
 logging.basicConfig(format='[%(filename)20s:%(lineno)3s - %(funcName)20s() ] %('
-                           'asctime)s %(levelname)s: %(message)s',
-                    level=logging.DEBUG)
+                               'asctime)s %(levelname)s: %(message)s',
+                                                   level=logging.DEBUG)
 
 # Discover and run the tests.
 loader = unittest.TestLoader()
