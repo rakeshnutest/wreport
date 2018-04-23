@@ -107,7 +107,7 @@ class CheckVM(task.WReportTask):
 
   def result(self):
     """Return the result of the task."""
-    return {self.vm.vm_name : self._result}
+    return {self.vm.name : self._result}
 
   @classmethod
   def get_jobs(cls, data_collection):
