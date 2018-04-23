@@ -73,7 +73,7 @@ class CheckVDisk(task.WReportTask):
 
   def result(self):
     """Return the result of the task."""
-    return {self.vdisk.vdisk_id : self._result}
+    return {self.vdisk.uuid : self._result}
 
   @classmethod
   def get_jobs(cls, data_collection):
