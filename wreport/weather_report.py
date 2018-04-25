@@ -73,7 +73,7 @@ class CheckVDisk(task.WReportTask):
 
   def result(self):
     """Return the result of the task."""
-    return {self.vdisk.vdisk_id : self._result}
+    return {self.vdisk.uuid : self._result}
 
   @classmethod
   def get_jobs(cls, data_collection):
@@ -107,7 +107,7 @@ class CheckVM(task.WReportTask):
 
   def result(self):
     """Return the result of the task."""
-    return {self.vm.vm_name : self._result}
+    return {self.vm.name : self._result}
 
   @classmethod
   def get_jobs(cls, data_collection):
@@ -222,7 +222,7 @@ class WeatherReport(object):
     if not self._raw_results:
       tasks = TASKS.get_tasks()
       for level in sorted(tasks.keys()):
-        if self._proc_cnt is not None or self._proc_cnt != 1:
+        if self._proc_cnt is not None and self._proc_cnt > 1:
           pool = mp.Pool(processes=self._proc_cnt)
           for task_obj in tasks[level]:
             for job in task_obj.get_jobs(self._dc_path):
@@ -234,7 +234,7 @@ class WeatherReport(object):
           for task_obj in tasks[level]:
             for job in task_obj.get_jobs(self._dc_path):
               job.run()
-              self._raw_results.append(job.result)
+              self._raw_results.append(job.result())
       # Save our work.
       with open(self._pickled_results_path, "w") as pickled_wreport:
         pickle.dump(self._raw_results, pickled_wreport)
