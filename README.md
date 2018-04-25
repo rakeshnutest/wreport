@@ -31,7 +31,7 @@ Additionally, a check has a `TITLE` and `DOC` class-variable,  as well as a
 * The `TITLE` variable represents the display name for the check, which can be
 * used in things like Illuminati reports.
 * The `DOC` variable provides context around the check and some suggested
-* action.
+action.
 * The `run_check` method is used as an entry point to execute the check.
 
 ## About the Task Queue
@@ -52,7 +52,7 @@ created and the level-0 tasks are executed in parallel.
 # Install.
 `$ pip install git+http://gitlab.rtp.nutanix.com/ntnx/wreport.git`
 
-If developing is your goal you may wish to perform a git clone and install an
+However, if developing is your goal you may wish to perform a git clone and install an
 editable version.
 ```
 $ git clone git@gitlab.rtp.nutanix.com:ntnx/wreport.git
@@ -115,8 +115,6 @@ Further, these results can be filtered, using the `status_filter` option.
 For example, `report.get_results(status_filter=[2])` will return a dictionary of
 results, grouped by the check name and only containing checks with a
 global status of `2`.
-* The Weather Report displayed in Illuminati filters out any report with a
-status of `0`, because those aren't really interesting.
 ```
 {'NodeCvmCpuUsage': {u'10.210.205.5': {'criteria': 'Average utilization: 736.3%, exceeded 90.0% of total.',
    'status': 2},
