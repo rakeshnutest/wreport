@@ -177,7 +177,7 @@ _CLUSTER_CHECKS
 
 # Troubleshooting
 Because the Weather Report relies on various `gnosis` objects, you'll want to
-instantiate a instance of the object for the respecrtive check.  Here's an crude
+instantiate a instance of the object for the respective check.  Here's an crude
 example of executing a specific check against a specific `Node` instance.
 ```
 from wreport import weather_report as wrpt
