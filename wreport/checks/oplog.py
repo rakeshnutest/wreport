@@ -47,7 +47,7 @@ class NodeBusyOplogCount(base.BaseCheck):
           > oplog_max * self._USAGE_WTRMRK).sum()
       # Frequency.
       if over /  float(len(gdf.value)) > self._SAMPLE_WTRMRK:
-        over_ids.append(group)
+        over_ids.append(group_name)
     # Look at how often this is the case.  We probably don't care about
     # isolated instances.
     over_cnt = len(over_ids)

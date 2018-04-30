@@ -280,16 +280,14 @@ class WeatherReport(object):
     """
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
-    for obj_results_dict in self.raw_results:
-      for obj_id, results_dict in obj_results_dict.items():
-        # The results_dict is nested dictionary keyed by test name.
-        for check_name, result in results_dict.items():
+    for obj_dict in self.raw_results:
+      for obj_id, check_dict in obj_dict.items():
+        for check_name, result in check_dict.items():
           if check_name not in grouped_dict.keys():
             grouped_dict[check_name] = {"status_list" : []}
           grouped_dict[check_name]["status_list"].append(result["status"])
           grouped_dict[check_name][obj_id] = result
     for results_dict in grouped_dict.values():
-      results_dict["group_status"] = max(results_dict["status_list"])
       # Complete failure of test across all objects.
       if all([status == 3 for status in results_dict["status_list"]]):
         results_dict["group_status"] = 3
@@ -317,6 +315,7 @@ class WeatherReport(object):
       for check, results_dict in grouped_dict.items():
         if results_dict["group_status"] not in status_filter:
           grouped_dict.pop(check)
+          continue
         for obj, result in results_dict.items():
           if not isinstance(result, dict):
             continue
