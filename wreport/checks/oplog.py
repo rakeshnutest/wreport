@@ -17,7 +17,7 @@ class NodeBusyOplogCount(base.BaseCheck):
   DOC = """If only a few VDisk's have heavily utilized oplogs it may indicate a
   need to split those VDisks into multple. If there are more than one, but less
   than four, it's likely not an issue, but something to look at."""
-  _MSG = "Only {0} VDisk oplog(s) are heavily utilized."
+  _MSG = "Only {0} VDisk oplog(s)({1}) are heavily utilized."
   # If only one vdisk has a busy vdisk we should look at BPGs.
   _CNT_HRD_WTRMRK = 1
   # If only four vdisks are busy it may be interesting.
@@ -36,26 +36,27 @@ class NodeBusyOplogCount(base.BaseCheck):
             (df.counter == "oplog_bytes")][["instance", "value"]]
     # Group into vdisk IDs.
     groups = df.groupby("instance", axis=0)
-    over_cnt = 0
+    over_ids = []
     # Count the number of VDisks over the usage threshold.
     for group_name, gdf in groups:
       # Skip the total instance.
       if group_name == "total":
         continue
-      # Count the numbers samples over the usage threshold.
+      # Number of samples over the usage threshold.
       over = (gdf.value.astype("float64") / 1024 ** 2 \
           > oplog_max * self._USAGE_WTRMRK).sum()
-      # Check the frequency this occurs.
+      # Frequency.
       if over /  float(len(gdf.value)) > self._SAMPLE_WTRMRK:
-        over_cnt += 1
+        over_ids.append(group)
     # Look at how often this is the case.  We probably don't care about
     # isolated instances.
+    over_cnt = len(over_ids)
     if over_cnt == self._CNT_HRD_WTRMRK:
       self.result["status"] = 2
-      self.result["criteria"] = self._MSG.format(over_cnt)
+      self.result["criteria"] = self._MSG.format(over_cnt, ", ".join(over_ids))
     elif self._CNT_HRD_WTRMRK < over_cnt <= self._CNT_SFT_WTRMRK:
       self.result["status"] = 1
-      self.result["criteria"] = self._MSG.format(over_cnt)
+      self.result["criteria"] = self._MSG.format(over_cnt, ", ".join(over_ids))
     else:
       self.result["status"] = 0
     return self.result
