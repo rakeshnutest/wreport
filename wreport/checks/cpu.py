@@ -148,3 +148,83 @@ class NodeHostCpuUtil(base.BaseCheck):
       self.result["status"] = 0
     return self.result
 
+
+class NodeCvmSustThreadUtil(base.BaseCheck):
+  """Check for sustained thread utilizaiton.
+
+  The evaulation is based on the upper quartile of samples.
+  """
+  TITLE = "CVM Thread Utilization"
+  DOC = """This check attempts to indentify threads with sustained utilization.
+  When threads are identified, try understanding what is driving that usage
+  before taking action and avoid additng threads arbitrarily. Start by ensuring
+  the cluster health from both a service and network perspective. If Stargate,
+  or other CDP related threads are identified, consider spreading workload to
+  less busy controllers.
+
+  For ESX, if an epoll thread is identified, consider adding a container and
+  balancing the workload between the two."""
+  _MSG = "{0} - Mean: {1:.2f} exceeded {2:.2f}%, Max: {3:.2f}, Cv: {4:.5f}, " \
+    "Count: {5}, Runs: {6}"
+  _SFT_WTRMK = 60
+  _HRD_WTRMK = 75
+
+  # pylint: disable=no-self-use
+  def _count_runs(self, ts_pd):
+    """Count the number of times consecutive timestamps were seen.
+
+    This is used to filter out threads with intermittent usuage.
+
+    Args:
+      ts_pd: A timeseries Pandas DataFrame w/ a timestamp column of type
+        pd.DateTime.
+    """
+    # Because `top` can be sampled at various lengths we need to normalize the
+    # diffs.  Doing two diffs seems to be the easiest, however, we lose the
+    # first two samples (can't diff on nothing).  This is probably okay.
+    diff = ts_pd.timestamp.diff().astype("timedelta64[s]")[1:]
+    diff = diff.diff()[1:].astype('timedelta64[s]').astype(int)
+    run_len = 0
+    runs = 0
+    for val in diff.values:
+      if val <= 0:
+        run_len += 1
+      else:
+        if run_len > 2:
+          runs += 1
+          run_len = 0
+    # This catches instances where the series ends in a run.
+    if run_len > 2:
+      runs += 1
+    return runs
+
+  def run_check(self):
+    self.result["status"] = 0
+    df = self._obj.datasets.top.df.copy()
+    df = df[["pid", "pctcpu", "command", "timestamp"]]
+    df["thread"] = df.pid.astype(str).str.cat(df.command, sep=":")
+    groups = df.groupby("thread")
+    for thread, t_df in groups:
+      util = t_df[t_df.pctcpu >= t_df.pctcpu.describe().loc["75%"]]
+      runs = self._count_runs(util)
+      if runs == 0:
+        continue
+      desc = util.pctcpu.describe()
+      # Coefficient of variation.
+      cov = desc.loc["std"] / desc.loc["count"]
+      if desc.loc["mean"] >= self._HRD_WTRMK:
+        wtrmrk = self._HRD_WTRMK
+        self.result["status"] = 2
+      elif desc.loc["mean"] >= self._SFT_WTRMK:
+        wtrmrk = self._SFT_WTRMK
+        if self.result["status"] != 2:
+          self.result["status"] = 1
+      else:
+        continue
+      if self.result["criteria"] is None:
+        self.result["criteria"] = []
+      self.result["criteria"].append(
+          self._MSG.format(thread, desc.loc["mean"], wtrmrk,
+                           desc.loc["max"], cov, desc.loc["count"], runs))
+    return self.result
+

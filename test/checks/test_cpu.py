@@ -5,6 +5,7 @@
 import unittest
 
 import mock
+import numpy as np
 import pandas as pd
 
 from gnosis.utils import AttrDict
@@ -104,4 +105,59 @@ class TestNodeHostCpuUtil(unittest.TestCase):
         [10, 20, 30, 90], index=self.dates))
     chk = cpu.NodeHostCpuUtil(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 2)
- 
+
+
+class TestNodeCvmSustThreadUtil(unittest.TestCase):
+  def test_no_runs(self):
+    dates = pd.to_datetime(["2042-01-01 00:00:00", "2042-01-01 00:00:05",
+                            "2042-01-01 00:01:00", "2042-01-01 00:01:05",
+                            "2042-01-01 00:02:00", "2042-01-01 00:02:05"])
+    df = pd.DataFrame(
+        np.random.randn(len(dates),1), index=dates, columns=["pctcpu"])
+    df["timestamp"] = df.index
+    chk = cpu.NodeCvmSustThreadUtil("fake_obj")
+    self.assertTrue(chk._count_runs(df) == 0)
+
+  def test_has_runs(self):
+    dates = pd.to_datetime(["2042-01-01 00:00:00", "2042-01-01 00:00:05",
+                            "2042-01-01 00:01:00", "2042-01-01 00:01:05",
+                            "2042-01-01 00:02:00", "2042-01-01 00:02:05",
+                            "2042-01-01 00:02:10", "2042-01-01 00:03:00",
+                            "2042-01-01 00:03:05", "2042-01-01 00:03:10",
+                            "2042-01-01 00:03:15",])
+    df = pd.DataFrame(
+        np.random.randn(len(dates),1), index=dates, columns=["pctcpu"])
+    df["timestamp"] = df.index
+    chk = cpu.NodeCvmSustThreadUtil("fake_obj")
+    self.assertTrue(chk._count_runs(df) == 2)
+
+  def test_good(self):
+    dates = pd.date_range("20420101", periods=10, freq="5S")
+    t_df = pd.DataFrame([40] * len(dates), index=dates, columns=["pctcpu"])
+    t_df["pid"] = 12345
+    t_df["command"] = "some_cmd"
+    t_df["timestamp"] = t_df.index
+    fake_obj = AttrDict(datasets=AttrDict(top=AttrDict(df=t_df)))
+    chk = cpu.NodeCvmSustThreadUtil(fake_obj)
+    self.assertTrue(chk.run_check()["status"] == 0)
+
+  def test_interesting(self):
+    dates = pd.date_range("20420101", periods=10, freq="5S")
+    t_df = pd.DataFrame([60] * len(dates), index=dates, columns=["pctcpu"])
+    t_df["pid"] = 12345
+    t_df["command"] = "some_cmd"
+    t_df["timestamp"] = t_df.index
+    fake_obj = AttrDict(datasets=AttrDict(top=AttrDict(df=t_df)))
+    chk = cpu.NodeCvmSustThreadUtil(fake_obj)
+    self.assertTrue(chk.run_check()["status"] == 1)
+
+  def test_investigate(self):
+    dates = pd.date_range("20420101", periods=10, freq="5S")
+    t_df = pd.DataFrame([75] * len(dates), index=dates, columns=["pctcpu"])
+    t_df["pid"] = 12345
+    t_df["command"] = "some_cmd"
+    t_df["timestamp"] = t_df.index
+    fake_obj = AttrDict(datasets=AttrDict(top=AttrDict(df=t_df)))
+    chk = cpu.NodeCvmSustThreadUtil(fake_obj)
+    self.assertTrue(chk.run_check()["status"] == 2)
+
