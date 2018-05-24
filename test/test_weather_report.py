@@ -86,8 +86,7 @@ class TestWeatherReport(unittest.TestCase):
 
   # The group results method will group results by check, where each object has
   # a status.
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_group_results(self, mock_WeatherReport):
+  def test_group_results(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(isinstance(grp_res, dict))
     chk_groups = ["all_good", "all_unknown", "all_interesting",
@@ -98,43 +97,65 @@ class TestWeatherReport(unittest.TestCase):
     for chk_dict in grp_res.values():
       self.assertTrue(all([key in chk_dict_keys for key in chk_dict.keys()]))
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_all_good(self, mock_WeatherReport):
+  def test_grp_res_all_good(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["all_good"]["group_status"] == 0)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_all_interesting(self, mock_WeatherReport):
+  def test_grp_res_all_interesting(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["all_interesting"]["group_status"] == 1)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_all_investigate(self, mock_WeatherReport):
+  def test_grp_res_all_investigate(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["all_investigate"]["group_status"] == 2)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_all_unknown(self, mock_WeatherReport):
+  def test_grp_res_all_unknown(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["all_unknown"]["group_status"] == 3)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_mix_good_unknown(self, mock_WeatherReport):
+  def test_grp_res_mix_good_unknown(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["mix_good_unknown"]["group_status"] == 0)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_mix_good_interesting(self, mock_WeatherReport):
+  def test_grp_res_mix_good_interesting(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["mix_good_interesting"]["group_status"] == 1)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_mix_good_investigate(self, mock_WeatherReport):
+  def test_grp_res_mix_good_investigate(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["mix_good_investigate"]["group_status"] == 2)
 
-  @mock.patch("wreport.weather_report.WeatherReport")
-  def test_grp_res_mix_interesting_investigate(self, mock_WeatherReport):
+  def test_grp_res_mix_interesting_investigate(self):
     grp_res = self.wrpt._group_results()
     self.assertTrue(grp_res["mix_interesting_investigate"]["group_status"] == 2)
+
+  def test_default_status_filter(self):
+    grp_res = self.wrpt.get_results()
+    expected  = [0, 1, 2, 3]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_status_filter(self):
+    grp_res = self.wrpt.get_results(status_filter=[1, 2, 3])
+    expected = [1, 2, 3]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_bad_status_filter_just_str(self):
+    grp_res = self.wrpt.get_results(status_filter="not list")
+    expected = [0, 1, 2, 3]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_good_status_filter_mixed_list(self):
+    grp_res = self.wrpt.get_results(status_filter=["1", 2])
+    expected = [1, 2]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_bad_status_filter_mixed_list(self):
+    grp_res = self.wrpt.get_results(status_filter=["a", "1"])
+    expected = [0, 1, 2, 3]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
 
