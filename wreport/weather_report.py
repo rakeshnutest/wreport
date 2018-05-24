@@ -309,8 +309,14 @@ class WeatherReport(object):
     Args:
       status_filter (list): Only return results with these status codes.
     """
+    # Check the filter and default to None on error.
     if not isinstance(status_filter, list):
       status_filter = None
+    else:
+      try:
+        status_filter = [int(val) for val in status_filter]
+      except ValueError:
+        status_filter = None
     grouped_dict = self._group_results()
     # Maybe filter results.
     if status_filter is not None:

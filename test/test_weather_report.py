@@ -141,8 +141,20 @@ class TestWeatherReport(unittest.TestCase):
     for chk_dict in grp_res.values():
       self.assertTrue(chk_dict["group_status"] in expected)
 
-  def test_bad_status_filter(self):
-    grp_res = self.wrpt.get_results()
+  def test_bad_status_filter_just_str(self):
+    grp_res = self.wrpt.get_results(status_filter="not list")
+    expected = [0, 1, 2, 3]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_good_status_filter_mixed_list(self):
+    grp_res = self.wrpt.get_results(status_filter=["1", 2])
+    expected = [1, 2]
+    for chk_dict in grp_res.values():
+      self.assertTrue(chk_dict["group_status"] in expected)
+
+  def test_bad_status_filter_mixed_list(self):
+    grp_res = self.wrpt.get_results(status_filter=["a", "1"])
     expected = [0, 1, 2, 3]
     for chk_dict in grp_res.values():
       self.assertTrue(chk_dict["group_status"] in expected)
