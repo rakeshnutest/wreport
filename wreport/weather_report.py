@@ -354,8 +354,6 @@ class WeatherReport(object):
           if not result.has_key("criteria"):
             continue
           if isinstance(result["criteria"], list):
-            # for elem in result["criteria"]:
-            #   print "\t{0}: {1}".format(obj, elem)
             print "\t{0}".format(obj)
             print "\t\t{0}".format("\n\t\t".join(result["criteria"]))
           elif result["criteria"] is not None:

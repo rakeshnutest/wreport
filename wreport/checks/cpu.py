@@ -155,15 +155,14 @@ class NodeCvmSustThreadUtil(base.BaseCheck):
   The evaulation is based on the upper quartile of samples.
   """
   TITLE = "CVM Thread Utilization"
-  DOC = """This check attempts to indentify threads with sustained utilization.
+  DOC = """This check attempts to identify threads with sustained utilization.
   When threads are identified, try understanding what is driving that usage
-  before taking action and avoid additng threads arbitrarily. Start by ensuring
-  the cluster health from both a service and network perspective. If Stargate,
-  or other CDP related threads are identified, consider spreading workload to
-  less busy controllers.
+  before taking action and avoid adding threads arbitrarily. Start by ensuring
+  the cluster health from both a service and network perspective.
 
-  For ESX, if an epoll thread is identified, consider adding a container and
-  balancing the workload between the two."""
+  If Stargate, or other CDP related threads are identified, consider spreading
+  workload to less busy controllers. If an epoll thread is identified on ESX
+  consider adding a container and balancing the workload between the two."""
   _MSG = "{0} - Mean: {1:.2f} exceeded {2:.2f}%, Max: {3:.2f}, Cv: {4:.5f}, " \
     "Count: {5}, Runs: {6}"
   _SFT_WTRMK = 60
