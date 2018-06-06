@@ -35,7 +35,8 @@ _NODE_CHECKS = [health.NodeStargateRestarts,
                 cpu.NodeHostCpuUtil,
                 cpu.NodeHostCpuUtilInbalance,
                 cpu.NodeCvmCpuReady,
-                cpu.NodeCvmCpuUsage]
+                cpu.NodeCvmCpuUsage,
+                cpu.NodeCvmSustThreadUtil]
 _CLUSTER_CHECKS = []
 # ------------------------------------------------------------------------------
 # Global task container.
@@ -353,8 +354,11 @@ class WeatherReport(object):
           if not result.has_key("criteria"):
             continue
           if isinstance(result["criteria"], list):
-            print "\t{}".format("\t".join("\n".join(result["criteria"])))
-          if result["criteria"] is not None:
+            # for elem in result["criteria"]:
+            #   print "\t{0}: {1}".format(obj, elem)
+            print "\t{0}".format(obj)
+            print "\t\t{0}".format("\n\t\t".join(result["criteria"]))
+          elif result["criteria"] is not None:
             print "\t{0}: {1}".format(obj, result["criteria"])
       print
 
