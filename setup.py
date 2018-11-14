@@ -8,8 +8,8 @@ setup(name="wreport",
       license="All Rights Reserved",
       packages=["wreport", "wreport.checks", "ntnx_gnosis", "nutbuf"],
       dependency_links=[
-        git+ssh://git@gitlab-ee.rtp.nutanix.com/gdowding/nutbuf.git@master#egg=nutbuf,
-        git+ssh://git@gitlab.rtp.nutanix.com/ntnx/gnosis.git@master#egg=ntnx_gnosis
+        'git+ssh://git@gitlab-ee.rtp.nutanix.com/gdowding/nutbuf.git@master#egg=nutbuf',
+        'git+ssh://git@gitlab.rtp.nutanix.com/ntnx/gnosis.git@master#egg=ntnx_gnosis'
       ],
       test_suite = "test.all_tests",
       install_requires=["pandas", "ntnx-gnosis", "plotly", "matplotlib"],
