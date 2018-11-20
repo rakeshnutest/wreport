@@ -1,0 +1,6 @@
+[
+  "test/checks/test_metadata.py::TestNodeMedusaLatCost::test_high_r_low_contrib", 
+  "test/checks/test_metadata.py::TestNodeMedusaLatCost::test_interesting", 
+  "test/checks/test_metadata.py::TestNodeMedusaLatCost::test_investigate", 
+  "test/checks/test_metadata.py::TestNodeMedusaLatCost::test_low_r_high_contrib"
+]

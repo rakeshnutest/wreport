@@ -20,7 +20,7 @@ class NodeMedusaLatCost(base.BaseCheck):
   may need to be increased, that the guests are reading a large working set, or
   tunning between the types of data being cached is needed."""
   _MSG = "Metadata resolution exceeded {0}MS and accounted for more than {1}%" \
-      " of the total resposne time."
+      " of the total response time."
   # Response time threshold in usecs.
   _R_WTRMRK = 10000
   # Warning threshold percentage.
