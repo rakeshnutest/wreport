@@ -31,6 +31,7 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                         dict(timestamp="dt_1", vdiskid="vdisk_1",
                              vdiskname="vdiskname_1")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
@@ -58,11 +59,13 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                         dict(timestamp="dt_1", vdiskid="vdisk_1",
                              vdiskname="vdiskname_1")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
         gflags=AttrDict(vdisk_distributed_oplog_max_dirty_MB="6144",
                vdisk_distributed_oplog_dynamic_draining_low_water_pct="85"))
+    fake_obj.vm_ls = None
     chk = oplog.NodeBusyOplogCount(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 0)
 
@@ -89,6 +92,7 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                         dict(timestamp="dt_0", vdiskid="vdisk_4",
                              vdiskname="vdiskname_4")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
@@ -116,11 +120,13 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                         dict(timestamp="dt_0", vdiskid="vdisk_3",
                              vdiskname="vdiskname_3")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
         gflags=AttrDict(vdisk_distributed_oplog_max_dirty_MB="6144",
                vdisk_distributed_oplog_dynamic_draining_low_water_pct="85"))
+    print(fake_obj.datasets.keys())
     chk = oplog.NodeBusyOplogCount(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 1)
 
@@ -143,6 +149,7 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                         dict(timestamp="dt_3", vdiskid="vdisk_0",
                              vdiskname="vdiskname_1")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
@@ -171,6 +178,7 @@ class TestVDiskLogicalOplogLimit(unittest.TestCase):
                         dict(timestamp="dt_1", vdiskid="vdisk_1",
                              vdiskname="vdiskname_1")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
@@ -197,6 +205,7 @@ class TestVDiskLogicalOplogLimit(unittest.TestCase):
                         dict(timestamp="dt_1", vdiskid="vdisk_1",
                              vdiskname="vdiskname_1")]
     fake_obj = AttrDict(
+        vm_ls=AttrDict(),
         datasets=AttrDict(hvars=AttrDict(df=pd.DataFrame(fake_data)),
                           stargate_hosted_active=\
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),

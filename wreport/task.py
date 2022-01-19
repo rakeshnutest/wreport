@@ -88,6 +88,11 @@ class WReportTask(object):
         check_result = {"status" : 0, "criteria" : None}
       except Exception as e:
         # 3 is Unknown
+        # FUTURE: need to fix this! This is causing silent failures
+        # for things like NameError exceptions.
+        # Uncomment out lines 94-95 to see all exceptions
+        # import traceback
+        # traceback.print_exc()
         check_result = {"status" : 3, "criteria" : "UNKNOWN", "exception" : e}
       results[check.__class__.__name__] = check_result
     return results
