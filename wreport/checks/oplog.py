@@ -8,6 +8,7 @@ sourced from a node level dataset like hvars.
 """
 
 from wreport.checks import base
+from wreport import node_utils
 
 
 class NodeBusyOplogCount(base.BaseCheck):
@@ -42,7 +43,7 @@ class NodeBusyOplogCount(base.BaseCheck):
   raised. Unless there is a throughput or latency concern with respect to 
   these VDisks, it's probably not an issue that needs to be resolved."""
 
-  _MSG = "Only {0} VDisk oplog(s) are heavily utilized: {1}"
+  _MSG = "One of {0} heavily utilized VDisk Oplogs: {1}"
   # If only one vdisk has a busy vdisk we should look at BPGs.
   _CNT_HRD_WTRMRK = 1
   # If only four vdisks are busy it may be interesting.
@@ -52,6 +53,7 @@ class NodeBusyOplogCount(base.BaseCheck):
 
   def run_check(self):
     """Check how many utilized oplogs per node exceed the watermark."""
+
     oplog_max = int(self._obj.gflags.vdisk_distributed_oplog_max_dirty_MB)
     low_water = \
       int(self._obj.gflags.\
@@ -80,17 +82,37 @@ class NodeBusyOplogCount(base.BaseCheck):
       if over / float(len(gdf.value)) > self._SAMPLE_WTRMRK:
         vdisk_name = list((hosted_df[\
           (hosted_df.vdiskid == group_name)].vdiskname).unique())
-        vdisk_string = vdisk_name[0] + " vdisk_id:" + group_name
+        vmvg_info = node_utils.get_vmvg_info(self._obj,
+                                             vdisk_name[0].split()[0])
+        if vmvg_info['vms']:
+          vmname = ','.join(vmvg_info['vms'])
+        else:
+          vmname = None
+        if vmvg_info['vg'] is not None and vmname is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vm:" + vmname + \
+                         " vg:" + vmvg_info['vg'] + " " + vdisk_name[0]
+        elif vmvg_info['vg'] is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vg: "\
+                         + vmvg_info['vg'] + " " + vdisk_name[0]
+        elif vmname is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vm:" + vmname +\
+                         " " + vdisk_name[0]
+        else:
+          vdisk_string = "vdisk_id:" + group_name + " " +\
+                        vdisk_name[0]
         over_ids.append(vdisk_string)
     # Look at how often this is the case.  We probably don't care about
     # isolated instances.
     over_cnt = len(over_ids)
     if over_cnt == self._CNT_HRD_WTRMRK:
       self.result["status"] = 2
-      self.result["criteria"] = self._MSG.format(over_cnt, ", ".join(over_ids))
+      self.result["criteria"] = self._MSG.format(over_cnt, over_ids[0])
     elif self._CNT_HRD_WTRMRK < over_cnt <= self._CNT_SFT_WTRMRK:
       self.result["status"] = 1
-      self.result["criteria"] = self._MSG.format(over_cnt, ", ".join(over_ids))
+      self.result["criteria"] = []
+      for over_id in over_ids:
+        self.result["criteria"].append(
+            self._MSG.format(over_cnt, over_id))
     else:
       self.result["status"] = 0
     return self.result
@@ -103,7 +125,7 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
   writing a lot of data and/or the underlying disk system is unable to keep up.
   If there are no signs of disk pressure, consider splitting this disk into
   multiple."""
-  _MSG = "VDisk ID {0}: Within {1}% of logical limit {2} times."
+  _MSG = "{0}: Within {1}% of logical limit {2} times."
   _WTRMRK = .90
 
   # pylint: disable=super-init-not-called
@@ -121,14 +143,36 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
     df = df[(df.component == "vdisk") &
             (df.counter == "oplog_bytes")][["instance", "value"]]
     groups = df.groupby("instance", axis=0)
+    # Use the stargate_hosted_active dataset to get vdisk name
+    hosted_df = self._node.datasets.stargate_hosted_active.df
+    hosted_df['vdiskid'] = hosted_df['vdiskid'].apply(str)
     for group_name, gdf in groups:
       if group_name == "total":
         continue
       over = (gdf.value.astype("float64") / 1024 ** 2 > \
           oplog_max * self._WTRMRK).sum()
       if over:
+        vdisk_name = list((hosted_df[\
+          (hosted_df.vdiskid == group_name)].vdiskname).unique())
+        vmvg_info = node_utils.get_vmvg_info(self._node,
+                                             vdisk_name[0].split()[0])
+        if vmvg_info['vms']:
+          vmname = ','.join(vmvg_info['vms'])
+        else:
+          vmname = None
+        if vmvg_info['vg'] is not None and vmname is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vm:" + vmname + \
+                         " vg:" + vmvg_info['vg'] + " " + vdisk_name[0]
+        elif vmvg_info['vg'] is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vg:" + vmvg_info['vg']\
+                         + " " + vdisk_name[0]
+        elif vmname is not None:
+          vdisk_string = "vdisk_id:" + group_name + " vm:" + vmname + \
+                         " " + vdisk_name[0]
+        else:
+          vdisk_string = "vdisk_id:" + group_name + " " + vdisk_name[0]
         self.result["criteria"].append(self._MSG.format(
-            group_name, self._WTRMRK * 100, over))
+            vdisk_string, self._WTRMRK * 100, over))
     if self.result["criteria"]:
       self.result["status"] = 2
     else:
