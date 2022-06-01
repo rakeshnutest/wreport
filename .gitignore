@@ -5,3 +5,4 @@ doc
 .eggs/
 *.egg-info/
 .gitkeep
+.pytest_cache/*
