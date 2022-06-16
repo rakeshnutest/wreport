@@ -19,6 +19,7 @@ from gnosis.explore import cluster as xcluster
 
 from wreport import task
 from wreport.checks import cpu
+from wreport.checks import diskawait
 from wreport.checks import health
 from wreport.checks import metadata
 from wreport.checks import oplog
@@ -36,7 +37,8 @@ _NODE_CHECKS = [health.NodeStargateRestarts,
                 cpu.NodeHostCpuUtilInbalance,
                 cpu.NodeCvmCpuReady,
                 cpu.NodeCvmCpuUsage,
-                cpu.NodeCvmSustThreadUtil]
+                cpu.NodeCvmSustThreadUtil,
+                diskawait.DiskWriteAwait]
 _CLUSTER_CHECKS = []
 # ------------------------------------------------------------------------------
 # Global task container.
