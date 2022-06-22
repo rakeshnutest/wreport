@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## [Unreleased]
 
+## [1.0.1] - 2022-06-22
+### Fixed
+- Initialize status to 0 for each node prior to testing disks
+  ([ILL-302])
 
 ## [1.0.0] - 2022-06-16
 ### Added
@@ -22,5 +26,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 [ILL-300]: https://jira.nutanix.com/browse/ILL-300
+[ILL-302]: https://jira.nutanix.com/browse/ILL-302
 
 [1.0.0]: https://gitlab.rtp.nutanix.com/ntnx/wreport/-/tags/1.0.0
+[1.0.1]: https://gitlab.rtp.nutanix.com/ntnx/wreport/-/compare/1.0.0...1.0.1
