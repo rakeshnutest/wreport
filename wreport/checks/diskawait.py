@@ -30,8 +30,10 @@ class DiskWriteAwait(base.BaseCheck):
     """ Count/percentage times w_await >= 10ms per SSD/NVMe disk """
 
     # we need to make sure list_disks is part of the collection
+
     if "list_disks" not in self._obj.datasets:
       return self.result
+    self.result["status"] = 0
     df = self._obj.datasets.list_disks.df
     iostat_df = self._obj.datasets.iostat.df
     serials = [disk.disk_serial_id for disk in self._obj.disks.values() \
