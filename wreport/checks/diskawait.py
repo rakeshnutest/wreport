@@ -40,7 +40,8 @@ class DiskWriteAwait(base.BaseCheck):
                 if "SSD" in disk.storage_tier]
     disks = []
     for serial in serials:
-      disks.append(df.loc[df['serial'] == serial, 'disk'].iloc[0].split('/')[2])
+      disks.append(df.loc[df['serial'] == serial, \
+        'disk'].iloc[0].split('/')[-1])
     for dev, df in iostat_df.groupby('device'):
       if dev in disks:
         count = 0
