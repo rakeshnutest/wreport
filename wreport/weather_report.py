@@ -45,8 +45,7 @@ _CLUSTER_CHECKS = []
 TASKS = task.Tasks()
 # Limit default process count. Used when called as script.
 PROC_COUNT = mp.cpu_count() / 2
-if PROC_COUNT < 1:
-  PROC_COUNT = 1
+PROC_COUNT = max(PROC_COUNT, 1)
 
 # Allows you to pass instance methods to processes.
 # pylint: disable=no-else-return
@@ -184,7 +183,7 @@ class CheckCluster(task.WReportTask):
     return {"Cluster" : self._result}
 
 
-class WeatherReport(object):
+class WeatherReport:
   """Methods for executing checks and accessing their results."""
 
 
@@ -206,10 +205,9 @@ class WeatherReport(object):
     if regen or not os.path.isfile(self._pickled_results_path):
       self._raw_results = []
     else:
-      with open(self._pickled_results_path, "r") as pickled_wreport:
+      with open(self._pickled_results_path, "r") as pickled_wreport: # pylint: disable=unspecified-encoding
         self._raw_results = pickle.load(pickled_wreport)
 
-  # pylint: disable=no-self-use
   def _process_job(self, job):
     """Executation wrapper for Running a job."""
     job.run()
@@ -222,6 +220,7 @@ class WeatherReport(object):
   @property
   def raw_results(self):
     """Runs and returns a list of dicts containing all unadulterated results."""
+    # pylint: disable=unspecified-encoding, consider-using-with
     if not self._raw_results:
       tasks = TASKS.get_tasks()
       for level in sorted(tasks.keys()):
@@ -246,25 +245,22 @@ class WeatherReport(object):
   @property
   def info(self):
     """Return a dictionary of pertinent cluster information."""
-    info = dict(cluster_id=self.cluster.cluster_id,
-                cluster_name=self.cluster.cluster_name,
-                aos_ver=str(self.cluster.release_version)[:45],
-                node_count=len(self.cluster.nodes),
-                hot_tier_size=self.cluster.hot_tier_size,
-                cold_tier_size=self.cluster.cold_tier_size,
-                vm_count=len(self.cluster.vms),
-                dc_path=self._dc_path)
+    info = {'cluster_id':self.cluster.cluster_id,
+            'cluster_name':self.cluster.cluster_name,
+            'aos_ver':str(self.cluster.release_version)[:45],
+            'node_count':len(self.cluster.nodes),
+            'hot_tier_size':self.cluster.hot_tier_size,
+            'cold_tier_size':self.cluster.cold_tier_size,
+            'vm_count':len(self.cluster.vms),
+            'dc_path':self._dc_path}
     return info
 
   def print_info(self):
     """Print cluster information."""
-    print("Cluster ID: {0} - Name: {1}".format(
-        self.cluster.cluster_id, self.cluster.cluster_name))
-    print("AOS Release: {0}".format(str(self.cluster.release_version)[:45]))
-    print("{0} Nodes - {1} UVMs".format(
-        len(self.cluster.nodes), len(self.cluster.vms)))
-    print("Hot/Cold Tier Size: {0} / {1}".format(
-        self.cluster.hot_tier_size, self.cluster.cold_tier_size))
+    print(f"Cluster ID: {self.cluster.cluster_id} - Name: {self.cluster.cluster_name}")
+    print(f"AOS Release: {str(self.cluster.release_version)[:45]}")
+    print(f"{len(self.cluster.nodes)} Nodes - {len(self.cluster.vms)} UVMs")
+    print(f"Hot/Cold Tier Size: {self.cluster.hot_tier_size} / {self.cluster.cold_tier_size}")
 
   def _group_results(self):
     """Group the raw results by name and determine the overall status code.
@@ -281,6 +277,7 @@ class WeatherReport(object):
       0: The test executed and all objects tested passed, or some passed while
         others threw an exception.
     """
+    # pylint: disable=consider-iterating-dictionary, use-a-generator
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
     for obj_dict in self.raw_results:
@@ -312,6 +309,7 @@ class WeatherReport(object):
     Args:
       status_filter (list): Only return results with these status codes.
     """
+    # pylint: disable=consider-iterating-dictionary
     # Check the filter and default to None on error.
     if not isinstance(status_filter, list):
       status_filter = None
@@ -343,10 +341,10 @@ class WeatherReport(object):
     """Prettily prints the results."""
     for check, check_results in list(self.get_results().items()):
       if check_results["group_status"] == 0:
-        print("{0}: No Issues Found".format(check))
+        print(f"{check}: No Issues Found")
         continue
-      elif check_results["group_status"] == 3:
-        print("{0}: All Unknown".format(check))
+      if check_results["group_status"] == 3:
+        print("{check}: All Unknown")
         continue
       print(check)
       for obj, result in list(check_results.items()):
@@ -356,10 +354,10 @@ class WeatherReport(object):
           if "criteria" not in result:
             continue
           if isinstance(result["criteria"], list):
-            print("\t{0}".format(obj))
-            print("\t\t{0}".format("\n\t\t".join(result["criteria"])))
+            print(f"\t{obj}")
+            print(f"\t\t{'\n\t\t'.join(result['criteria'])}")
           elif result["criteria"] is not None:
-            print("\t{0}: {1}".format(obj, result["criteria"]))
+            print(f"\t{obj}: {result["criteria"]}")
       print()
 
 

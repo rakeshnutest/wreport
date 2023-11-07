@@ -36,7 +36,7 @@ def get_vmvg_info(node_obj, nfs_name):
   if _has_vmls:
     vmname = get_vmname(nfs_name, node_obj.vm_ls)
     if vmname is not None:
-      vm_info['vms'] = list()
+      vm_info['vms'] = []
       vm_info['vms'].append(vmname)
       # if the NFS name is found in the vm_ls dataset, we're done
       return vm_info

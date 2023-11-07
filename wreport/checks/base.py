@@ -6,7 +6,7 @@
 All checks require a TITLE and DOC constant, and a run_check method.
 """
 
-class BaseCheck(object):
+class BaseCheck:
   """The base check structure."""
   # The display name for the check.
   TITLE = ""

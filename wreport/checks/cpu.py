@@ -168,7 +168,6 @@ class NodeCvmSustThreadUtil(base.BaseCheck):
   _SFT_WTRMK = 60
   _HRD_WTRMK = 75
 
-  # pylint: disable=no-self-use
   def _count_runs(self, ts_pd):
     """Count the number of times consecutive timestamps were seen.
 

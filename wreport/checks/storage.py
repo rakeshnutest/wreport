@@ -35,8 +35,7 @@ class VDiskColdTierReads(base.BaseCheck):
     for counter in wanted:
       if counter not in df.columns:
         # Throwing an exception will percolate up.
-        raise Exception("read_source_df missing columns: {0}.".format(
-            ", ".join(wanted)))
+        raise Exception(f"read_source_df missing columns: {', '.join(wanted)}.")
     hdd_ratio = df.estore_hdd_kb / (df.estore_hdd_kb + df.estore_ssd_kb)
     hdd_ratio.dropna(inplace=True)
     # Run the check.
