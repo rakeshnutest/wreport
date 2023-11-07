@@ -59,8 +59,8 @@ class TestHostCpuUtilInbalance(unittest.TestCase):
   def test_good(self):
     # Cv of .45 and .43
     fake_obj = AttrDict(host_pcpu_util=pd.DataFrame(
-        dict(zip([i for i in range(16)], [20, 20, 20, 20, 50, 50, 50, 50,
-                                          50, 40, 30, 20, 10, 20, 30, 40])),
+        dict(list(zip([i for i in range(16)], [20, 20, 20, 20, 50, 50, 50, 50,
+                                          50, 40, 30, 20, 10, 20, 30, 40]))),
         index=self.dates))
     chk = cpu.NodeHostCpuUtilInbalance(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 0)
@@ -68,8 +68,8 @@ class TestHostCpuUtilInbalance(unittest.TestCase):
   def test_interesting(self):
     # Cv of .57 and .45
     fake_obj = AttrDict(host_pcpu_util=pd.DataFrame(
-        dict(zip([i for i in range(16)], [15, 15, 15, 15, 50, 50, 50, 50,
-                                          20, 20, 20, 20, 50, 50, 50, 50])),
+        dict(list(zip([i for i in range(16)], [15, 15, 15, 15, 50, 50, 50, 50,
+                                          20, 20, 20, 20, 50, 50, 50, 50]))),
         index=self.dates))
     chk = cpu.NodeHostCpuUtilInbalance(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 1)
@@ -77,8 +77,8 @@ class TestHostCpuUtilInbalance(unittest.TestCase):
   def test_investigate(self):
     # Cv of .71 and .57
     fake_obj = AttrDict(host_pcpu_util=pd.DataFrame(
-        dict(zip([i for i in range(16)], [10, 10, 10, 10, 50, 50, 50, 50,
-                                          15, 15, 15, 15, 50, 50, 50, 50])),
+        dict(list(zip([i for i in range(16)], [10, 10, 10, 10, 50, 50, 50, 50,
+                                          15, 15, 15, 15, 50, 50, 50, 50]))),
         index=self.dates))
     chk = cpu.NodeHostCpuUtilInbalance(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 2)

@@ -126,7 +126,7 @@ class TestNodeBusyOplogCount(unittest.TestCase):
                           AttrDict(df=pd.DataFrame(fake_hosted_data))),
         gflags=AttrDict(vdisk_distributed_oplog_max_dirty_MB="6144",
                vdisk_distributed_oplog_dynamic_draining_low_water_pct="85"))
-    print(fake_obj.datasets.keys())
+    print((list(fake_obj.datasets.keys())))
     chk = oplog.NodeBusyOplogCount(fake_obj)
     self.assertTrue(chk.run_check()["status"] == 1)
 

@@ -29,7 +29,7 @@ def get_vmvg_info(node_obj, nfs_name):
 
   # check pre-reqs
   _has_vmls = node_obj.vm_ls is not None
-  _has_vgs = all((item in node_obj.datasets.keys()
+  _has_vgs = all((item in list(node_obj.datasets.keys())
                   for item in ["vdisk_to_vg", "vm_to_vg"]))
 
   # Check if NFS name is a standard direct-attached vdisk
@@ -80,7 +80,7 @@ def get_vdisk_uuid(node_obj, nfs_name):
     arithmos_vdisks: the nodes arithmos_vdisks dataset
   """
   vdisk_uuid = None
-  if "arithmos_vdisks" in node_obj.datasets.keys():
+  if "arithmos_vdisks" in list(node_obj.datasets.keys()):
     df = node_obj.datasets.arithmos_vdisks.df
     if df is not None:
       vdisk_uuid = df.loc[df.nfs_name == nfs_name, \
@@ -101,7 +101,7 @@ def get_vmname(nfs_name, vmls):
     vmls: the nodes vmls dataset data
   """
   vmname = None
-  for vm in vmls.items():
+  for vm in list(vmls.items()):
     if vm[1].vdisks is not None:
       if nfs_name in vm[1].vdisks:
         vmname = vm[0]

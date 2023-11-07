@@ -36,7 +36,7 @@ class DiskWriteAwait(base.BaseCheck):
     self.result["status"] = 0
     df = self._obj.datasets.list_disks.df
     iostat_df = self._obj.datasets.iostat.df
-    serials = [disk.disk_serial_id for disk in self._obj.disks.values() \
+    serials = [disk.disk_serial_id for disk in list(self._obj.disks.values()) \
                 if "SSD" in disk.storage_tier]
     disks = []
     for serial in serials:

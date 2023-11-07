@@ -17,14 +17,14 @@ class TestTASKS(unittest.TestCase):
     self.tasks = wrpt.TASKS.get_tasks()
 
   def test_task_levels(self):
-    self.assertIn(0, self.tasks.keys())
-    self.assertIn(1, self.tasks.keys())
-    self.assertTrue(all([type(key) == int for key in self.tasks.keys()]))
+    self.assertIn(0, list(self.tasks.keys()))
+    self.assertIn(1, list(self.tasks.keys()))
+    self.assertTrue(all([type(key) == int for key in list(self.tasks.keys())]))
 
   def test_tasks_list(self):
     chks = ["VDisk", "VM", "Node", "Cluster"]
     chk_names = []
-    for lvl in self.tasks.values():
+    for lvl in list(self.tasks.values()):
       for chk in lvl:
         chk_names.append(chk.name())
     self.assertTrue(all([chk_name in chks for chk_name in chk_names]))
@@ -92,10 +92,10 @@ class TestWeatherReport(unittest.TestCase):
     chk_groups = ["all_good", "all_unknown", "all_interesting",
                   "all_investigate", "mix_good_unknown", "mix_good_interesting",
                   "mix_good_investigate", "mix_interesting_investigate"]
-    self.assertTrue(all([key in chk_groups for key in grp_res.keys()]))
+    self.assertTrue(all([key in chk_groups for key in list(grp_res.keys())]))
     chk_dict_keys = ["obj_0", "obj_1", "status_list", "group_status"]
-    for chk_dict in grp_res.values():
-      self.assertTrue(all([key in chk_dict_keys for key in chk_dict.keys()]))
+    for chk_dict in list(grp_res.values()):
+      self.assertTrue(all([key in chk_dict_keys for key in list(chk_dict.keys())]))
 
   def test_grp_res_all_good(self):
     grp_res = self.wrpt._group_results()
@@ -132,30 +132,30 @@ class TestWeatherReport(unittest.TestCase):
   def test_default_status_filter(self):
     grp_res = self.wrpt.get_results()
     expected  = [0, 1, 2, 3]
-    for chk_dict in grp_res.values():
+    for chk_dict in list(grp_res.values()):
       self.assertTrue(chk_dict["group_status"] in expected)
 
   def test_status_filter(self):
     grp_res = self.wrpt.get_results(status_filter=[1, 2, 3])
     expected = [1, 2, 3]
-    for chk_dict in grp_res.values():
+    for chk_dict in list(grp_res.values()):
       self.assertTrue(chk_dict["group_status"] in expected)
 
   def test_bad_status_filter_just_str(self):
     grp_res = self.wrpt.get_results(status_filter="not list")
     expected = [0, 1, 2, 3]
-    for chk_dict in grp_res.values():
+    for chk_dict in list(grp_res.values()):
       self.assertTrue(chk_dict["group_status"] in expected)
 
   def test_good_status_filter_mixed_list(self):
     grp_res = self.wrpt.get_results(status_filter=["1", 2])
     expected = [1, 2]
-    for chk_dict in grp_res.values():
+    for chk_dict in list(grp_res.values()):
       self.assertTrue(chk_dict["group_status"] in expected)
 
   def test_bad_status_filter_mixed_list(self):
     grp_res = self.wrpt.get_results(status_filter=["a", "1"])
     expected = [0, 1, 2, 3]
-    for chk_dict in grp_res.values():
+    for chk_dict in list(grp_res.values()):
       self.assertTrue(chk_dict["group_status"] in expected)
 

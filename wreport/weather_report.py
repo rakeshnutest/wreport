@@ -9,7 +9,7 @@ The Weather Report is a tool that runs various performance related checks in
 an effort to identify common issues that have a known impact on performance.
 """
 import argparse
-import copy_reg
+import copyreg
 import multiprocessing as mp
 import os
 import pickle
@@ -51,11 +51,11 @@ if PROC_COUNT < 1:
 # Allows you to pass instance methods to processes.
 # pylint: disable=no-else-return
 def _pickle_method(method):
-  if method.im_self is None:
-    return getattr, (method.im_class, method.im_func.func_name)
+  if method.__self__ is None:
+    return getattr, (method.__self__.__class__, method.__func__.__name__)
   else:
-    return getattr, (method.im_self, method.im_func.func_name)
-copy_reg.pickle(types.MethodType, _pickle_method)
+    return getattr, (method.__self__, method.__func__.__name__)
+copyreg.pickle(types.MethodType, _pickle_method)
 
 
 @TASKS.add_task(0)
@@ -88,7 +88,7 @@ class CheckVDisk(task.WReportTask):
       data_collection: The data path.
     """
     cluster = xcluster.Cluster(data_collection=data_collection)
-    for vdisk in cluster.vdisks.values():
+    for vdisk in list(cluster.vdisks.values()):
       yield CheckVDisk(vdisk)
 
 
@@ -122,7 +122,7 @@ class CheckVM(task.WReportTask):
       data_collection: The data path.
     """
     cluster = xcluster.Cluster(data_collection=data_collection)
-    for vm in cluster.vms.values():
+    for vm in list(cluster.vms.values()):
       yield CheckVM(vm)
 
 
@@ -156,7 +156,7 @@ class CheckNode(task.WReportTask):
       data_collection: The data path.
     """
     cluster = xcluster.Cluster(data_collection=data_collection)
-    for node in cluster.nodes.values():
+    for node in list(cluster.nodes.values()):
       yield CheckNode(node)
 
 @TASKS.add_task(1)
@@ -258,13 +258,13 @@ class WeatherReport(object):
 
   def print_info(self):
     """Print cluster information."""
-    print "Cluster ID: {0} - Name: {1}".format(
-        self.cluster.cluster_id, self.cluster.cluster_name)
-    print "AOS Release: {0}".format(str(self.cluster.release_version)[:45])
-    print "{0} Nodes - {1} UVMs".format(
-        len(self.cluster.nodes), len(self.cluster.vms))
-    print "Hot/Cold Tier Size: {0} / {1}".format(
-        self.cluster.hot_tier_size, self.cluster.cold_tier_size)
+    print("Cluster ID: {0} - Name: {1}".format(
+        self.cluster.cluster_id, self.cluster.cluster_name))
+    print("AOS Release: {0}".format(str(self.cluster.release_version)[:45]))
+    print("{0} Nodes - {1} UVMs".format(
+        len(self.cluster.nodes), len(self.cluster.vms)))
+    print("Hot/Cold Tier Size: {0} / {1}".format(
+        self.cluster.hot_tier_size, self.cluster.cold_tier_size))
 
   def _group_results(self):
     """Group the raw results by name and determine the overall status code.
@@ -284,13 +284,13 @@ class WeatherReport(object):
     grouped_dict = {}
     # The raw results are a list of nested dictionaries.
     for obj_dict in self.raw_results:
-      for obj_id, check_dict in obj_dict.items():
-        for check_name, result in check_dict.items():
-          if check_name not in grouped_dict.keys():
+      for obj_id, check_dict in list(obj_dict.items()):
+        for check_name, result in list(check_dict.items()):
+          if check_name not in list(grouped_dict.keys()):
             grouped_dict[check_name] = {"status_list" : []}
           grouped_dict[check_name]["status_list"].append(result["status"])
           grouped_dict[check_name][obj_id] = result
-    for results_dict in grouped_dict.values():
+    for results_dict in list(grouped_dict.values()):
       # Complete failure of test across all objects.
       if all([status == 3 for status in results_dict["status_list"]]):
         results_dict["group_status"] = 3
@@ -323,44 +323,44 @@ class WeatherReport(object):
     grouped_dict = self._group_results()
     # Maybe filter results.
     if status_filter is not None:
-      for check, results_dict in grouped_dict.items():
+      for check, results_dict in list(grouped_dict.items()):
         if results_dict["group_status"] not in status_filter:
           grouped_dict.pop(check)
           continue
-        for obj, result in results_dict.items():
+        for obj, result in list(results_dict.items()):
           if not isinstance(result, dict):
             continue
           if result["status"] not in status_filter:
             results_dict.pop(obj)
     # Adds the title and documentation to the checks.
     for check in _VDISK_CHECKS + _VM_CHECKS + _NODE_CHECKS + _CLUSTER_CHECKS:
-      if check.__name__ in grouped_dict.keys():
+      if check.__name__ in list(grouped_dict.keys()):
         grouped_dict[check.__name__]["title"] = check.TITLE
         grouped_dict[check.__name__]["doc"] = check.DOC
     return grouped_dict
 
   def print_results(self):
     """Prettily prints the results."""
-    for check, check_results in self.get_results().items():
+    for check, check_results in list(self.get_results().items()):
       if check_results["group_status"] == 0:
-        print "{0}: No Issues Found".format(check)
+        print("{0}: No Issues Found".format(check))
         continue
       elif check_results["group_status"] == 3:
-        print "{0}: All Unknown".format(check)
+        print("{0}: All Unknown".format(check))
         continue
-      print check
-      for obj, result in check_results.items():
+      print(check)
+      for obj, result in list(check_results.items()):
         if obj == "doc":
           continue
         if isinstance(result, dict):
-          if not result.has_key("criteria"):
+          if "criteria" not in result:
             continue
           if isinstance(result["criteria"], list):
-            print "\t{0}".format(obj)
-            print "\t\t{0}".format("\n\t\t".join(result["criteria"]))
+            print("\t{0}".format(obj))
+            print("\t\t{0}".format("\n\t\t".join(result["criteria"])))
           elif result["criteria"] is not None:
-            print "\t{0}: {1}".format(obj, result["criteria"])
-      print
+            print("\t{0}: {1}".format(obj, result["criteria"]))
+      print()
 
 
 def main():
@@ -392,7 +392,7 @@ def main():
     report.get_results()
   else:
     report.print_info()
-    print
+    print()
     report.print_results()
 
 if __name__ == "__main__":
