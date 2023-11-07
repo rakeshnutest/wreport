@@ -23,8 +23,8 @@ class NodeCvmCpuUsage(base.BaseCheck):
     """Evaluate CVMs CPU utilization."""
     cpu_max = self._obj.cvm_cpu_count * 100
     pct_used = self._obj.host_cvm_cpu_util.pct_used
-    avg = pct_used[pct_used >= pct_used.describe().ix[
-        "75%"]].describe().ix["mean"]
+    avg = pct_used[pct_used >= pct_used.describe().loc[
+        "75%"]].describe().loc["mean"]
     if avg >= cpu_max * self._HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(avg, self._HRD_WTRMRK * 100)
@@ -55,8 +55,8 @@ class NodeCvmCpuReady(base.BaseCheck):
   def run_check(self):
     """Evaluate CVMs CPU ready time."""
     pct_ready = self._obj.host_cvm_cpu_util.pct_ready
-    avg = pct_ready[pct_ready >= pct_ready.describe().ix[
-        "75%"]].describe().ix["mean"]
+    avg = pct_ready[pct_ready >= pct_ready.describe().loc[
+        "75%"]].describe().loc["mean"]
     if avg >= self._obj.cvm_cpu_count * self._HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(avg, self._HRD_WTRMRK)
@@ -136,8 +136,8 @@ class NodeHostCpuUtil(base.BaseCheck):
   def run_check(self):
     """Evaluate CPU utilization."""
     df = self._obj.host_pcpu_util
-    df = df[df >= df.describe().ix["75%"]].describe()
-    avg = df.ix["mean"].mean()
+    df = df[df >= df.describe().loc["75%"]].describe()
+    avg = df.loc["mean"].mean()
     if avg >= self._HRD_WTRMRK:
       self.result["status"] = 2
       self.result["criteria"] = self._MSG.format(avg, self._HRD_WTRMRK)
