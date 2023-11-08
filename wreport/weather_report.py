@@ -205,7 +205,7 @@ class WeatherReport:
     if regen or not os.path.isfile(self._pickled_results_path):
       self._raw_results = []
     else:
-      with open(self._pickled_results_path, "r") as pickled_wreport: # pylint: disable=unspecified-encoding
+      with open(self._pickled_results_path, "rb") as pickled_wreport: # pylint: disable=unspecified-encoding
         self._raw_results = pickle.load(pickled_wreport)
 
   def _process_job(self, job):
