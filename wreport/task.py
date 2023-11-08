@@ -117,4 +117,3 @@ class WReportTask:
       data_dir: Path to location of data.
     """
     yield cls(data_collection)
-

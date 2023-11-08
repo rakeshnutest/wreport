@@ -37,4 +37,3 @@ class BaseCheck:
   def run_check(self):
     """Execute the check and return the results dictionary."""
     raise NotImplementedError()
-

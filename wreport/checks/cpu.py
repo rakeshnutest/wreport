@@ -225,4 +225,3 @@ class NodeCvmSustThreadUtil(base.BaseCheck):
           self._MSG.format(thread, desc.loc["mean"], wtrmrk,
                            desc.loc["max"], cov, desc.loc["count"], runs))
     return self.result
-

@@ -42,6 +42,7 @@ class NodeBusyOplogCount(base.BaseCheck):
   That said, it's not uncommon to see 1-4 vDisks on a CVM where this test is 
   raised. Unless there is a throughput or latency concern with respect to 
   these VDisks, it's probably not an issue that needs to be resolved."""
+  # pylint: disable=too-many-locals, too-many-branches
 
   _MSG = "One of {0} heavily utilized VDisk Oplogs: {1}"
   # If only one vdisk has a busy vdisk we should look at BPGs.
@@ -178,4 +179,3 @@ class VDiskLogicalOplogLimit(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
-

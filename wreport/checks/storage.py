@@ -29,6 +29,7 @@ class VDiskColdTierReads(base.BaseCheck):
 
     This check is based on the Arithmos virtual_disk_stats.
     """
+    # pylint: disable=broad-exception-raised
     wanted = ["estore_hdd_kb", "estore_ssd_kb"]
     df = self._obj.read_source_df
     # Make sure the counters are there.
@@ -61,4 +62,3 @@ class VDiskColdTierReads(base.BaseCheck):
           self._SFT_WTRMRK * 100, len(data[data > self._SFT_WTRMRK]))
     else:
       self.result["status"] = 0
-

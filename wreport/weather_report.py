@@ -339,6 +339,7 @@ class WeatherReport:
 
   def print_results(self):
     """Prettily prints the results."""
+    # pylint: disable=consider-using-f-string
     for check, check_results in list(self.get_results().items()):
       if check_results["group_status"] == 0:
         print(f"{check}: No Issues Found")
@@ -354,10 +355,10 @@ class WeatherReport:
           if "criteria" not in result:
             continue
           if isinstance(result["criteria"], list):
-            print(f"\t{obj}")
-            print(f"\t\t{'\n\t\t'.join(result['criteria'])}")
+            print("\t{0}".format(obj))
+            print("\t\t{0}".format("\n\t\t".join(result["criteria"])))
           elif result["criteria"] is not None:
-            print(f"\t{obj}: {result["criteria"]}")
+            print(f"\t{obj}: {result['criteria']}")
       print()
 
 
@@ -395,4 +396,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
