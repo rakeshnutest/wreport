@@ -25,4 +25,3 @@ class NodeStargateRestarts(base.BaseCheck):
     else:
       self.result["status"] = 0
     return self.result
-

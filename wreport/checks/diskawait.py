@@ -13,6 +13,7 @@ class DiskWriteAwait(base.BaseCheck):
   In cases where disk await exceeds a threshold, we will provide other
   disk iostat values to aide in diagnosis
   """
+  # pylint: disable=too-many-locals
   TITLE = "Disk Write Await Check"
   DOC = """This check evaluates the w_await values for SSD/NVMe disks and
   provides alerts when values exceeds a threshold for a minimum of 2% of the 
