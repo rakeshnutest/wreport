@@ -238,7 +238,7 @@ class WeatherReport:
               job.run()
               self._raw_results.append(job.result())
       # Save our work.
-      with open(self._pickled_results_path, "w") as pickled_wreport:
+      with open(self._pickled_results_path, "wb") as pickled_wreport:
         pickle.dump(self._raw_results, pickled_wreport)
     return self._raw_results
 
