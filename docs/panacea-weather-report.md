@@ -1,6 +1,8 @@
 # Weather Report on one Panacea bundle
 
-Eleven checks, one `log_bundle_id`. Metric rows live in `panacea.nu_metrics_sysstats`. Config lives in the `nu_config_*` tables. No new ClickHouse table.
+Eleven storage and CPU checks, plus three network checks, on one `log_bundle_id`. Metric rows live in `panacea.nu_metrics_sysstats`. Config lives in the `nu_config_*` tables. No new ClickHouse table.
+
+The network checks do not need new parsers. `sar.INFO`, `ping_all.INFO`, and `host_nic_stats.INFO` are already ingested.
 
 Every query filters `log_bundle_id` first, because that column leads the sort key. Replace `12345` with the bundle id. End every query with:
 
@@ -25,6 +27,9 @@ These are ingested today. The report reads them.
 | Write await | `iostat.INFO` | `disk_write_await_ms`, `disk_avg_queue_size`, `disk_write_iops` | `component` `disk`. Instance is the kernel device (`sda`, `nvme0n1`). |
 | vCPU count | `mpstat.INFO` | `cpu_idle_percent`, one row per core | Count instances other than `all`. This is the count only. It is not the usage check. |
 | Whole-host idle | `top_host.INFO` | `top_host_cpu_idle` | One number for the host. Host CPU level and core imbalance still need per-core rows. |
+| SAR | `sar.INFO` | `sar_rx_drops_per_sec`, `sar_tx_drops_per_sec`, `sar_rx_errors_per_sec`, `sar_tx_errors_per_sec`, `sar_ifutil_pct`, `sar_*_packets_per_sec` | `component` `network`. Instance is the interface. Section 8. |
+| Ping all | `ping_all.INFO` | `ping_all_latency`, `ping_all_lost_pkt`, `ping_all_unreachable` | `component` `ping`. Instance is the target. Section 9. |
+| Host NIC CRC | `host_nic_stats.INFO` | `host_nic_rx_crc_errors` | Absolute counter. Score the increase during the bundle. Section 10. |
 
 ### Disk write await, from data already stored
 
@@ -281,6 +286,115 @@ LIMIT 1000
 ```
 
 Investigate when `hot_cold / samples` is at least 0.40. Interesting when `warm_cold / samples` is at least 0.25.
+
+## 8. SAR
+
+**Already stored.** `sar.INFO`. `component` `network`. Instance is the interface. Guest `tap` and `veth` interfaces are skipped at ingest. The names below are the ones the parser writes.
+
+**Add.** Drops, errors, and utilization need no parser. Packet rate needs the interface speed, which is not stored today. Add one row per interface, `component` `network`, metric `nic_speed_bps`, from ethtool speed or the speed SAR used for `%ifutil`.
+
+**How.** Drops and errors use 1 per second as the hit. Byte load uses `sar_ifutil_pct`, which is already throughput divided by link bandwidth: 80 interesting, 90 investigate. Packet rate uses that same bandwidth. The ceiling is the smallest Ethernet frame, 64 bytes, which is 512 bits:
+
+`line_pps = nic_speed_bps / 512`
+
+Interesting when receive or transmit packets per second reach half of `line_pps`. Investigate at 80% of `line_pps`. On a 10 Gbps link that is about 9.8 million and 15.6 million packets per second. On a 25 Gbps link it is about 24.4 million and 39.1 million. A single packet-rate number for every NIC is the wrong line.
+
+```sql
+WITH speed AS (
+    SELECT cvm_ip, component_instance AS iface, any(value) AS speed_bps
+    FROM panacea.nu_metrics_sysstats
+    WHERE log_bundle_id = 12345
+      AND component = 'network'
+      AND metric_name = 'nic_speed_bps'
+    GROUP BY cvm_ip, iface
+),
+rates AS (
+    SELECT cvm_ip, component_instance AS iface,
+           countIf(metric_name IN (
+                'sar_rx_drops_per_sec', 'sar_tx_drops_per_sec',
+                'sar_rx_errors_per_sec', 'sar_tx_errors_per_sec')
+              AND value >= 1) AS bad_samples,
+           countIf(metric_name IN (
+                'sar_rx_drops_per_sec', 'sar_tx_drops_per_sec',
+                'sar_rx_errors_per_sec', 'sar_tx_errors_per_sec')) AS rate_samples,
+           maxIf(value, metric_name = 'sar_ifutil_pct') AS max_ifutil_pct,
+           maxIf(value, metric_name = 'sar_rx_packets_per_sec') AS max_rx_pps,
+           maxIf(value, metric_name = 'sar_tx_packets_per_sec') AS max_tx_pps
+    FROM panacea.nu_metrics_sysstats
+    WHERE log_bundle_id = 12345
+      AND component = 'network'
+      AND metric_name IN (
+            'sar_rx_drops_per_sec', 'sar_tx_drops_per_sec',
+            'sar_rx_errors_per_sec', 'sar_tx_errors_per_sec',
+            'sar_ifutil_pct',
+            'sar_rx_packets_per_sec', 'sar_tx_packets_per_sec')
+    GROUP BY cvm_ip, iface
+)
+SELECT r.cvm_ip, r.iface, r.bad_samples, r.rate_samples, r.max_ifutil_pct,
+       r.max_rx_pps, r.max_tx_pps, s.speed_bps,
+       s.speed_bps / 512 AS line_pps
+FROM rates AS r
+LEFT JOIN speed AS s ON r.cvm_ip = s.cvm_ip AND r.iface = s.iface
+LIMIT 500
+```
+
+Drops or errors at or above 1 per second: investigate when `bad_samples / rate_samples` is at least 0.02, interesting when `bad_samples` is at least 1. Interface utilization: 80 interesting, 90 investigate. Packet rate: interesting at `0.5 * line_pps`, investigate at `0.8 * line_pps`. If `nic_speed_bps` is missing for that interface, the packet-rate check is status 3 and the utilization check still runs.
+
+## 9. Ping all
+
+**Already stored.** `ping_all.INFO`. `component` `ping`. Instance is the target (CVM, host, or gateway). Metrics `ping_all_latency` (ms), `ping_all_lost_pkt`, and `ping_all_unreachable`. A value above 0 on the last two is a lost or unreachable sample.
+
+**Add.** No parser. Score the rows.
+
+**How.** Any loss or unreachable target is investigate. That matches the Panacea ping check, which treats loss and unreachable above 0 as a hit. Latency has no fixed millisecond line in that check. For this report, p95 at or above 5 ms is interesting and p95 at or above 20 ms is investigate.
+
+```sql
+SELECT cvm_ip, component_instance AS target,
+       countIf(metric_name IN ('ping_all_lost_pkt', 'ping_all_unreachable')
+               AND value > 0) AS loss_samples,
+       quantileIf(0.95)(value, metric_name = 'ping_all_latency') AS p95_ms
+FROM panacea.nu_metrics_sysstats
+WHERE log_bundle_id = 12345
+  AND component = 'ping'
+  AND metric_name IN (
+        'ping_all_lost_pkt', 'ping_all_unreachable', 'ping_all_latency')
+GROUP BY cvm_ip, target
+HAVING loss_samples > 0 OR p95_ms >= 5
+ORDER BY loss_samples DESC, p95_ms DESC
+LIMIT 200
+```
+
+## 10. Host NIC CRC
+
+**Already stored.** `host_nic_stats.INFO`. `component` `network`. Instance is the interface. Metric `host_nic_rx_crc_errors`. The parser keeps the ethtool counter as an absolute total, not a per-second rate. Per-queue keys are dropped at ingest.
+
+`ethtool_rx_crc_errors` is also ingested, from a single `ethtool -S` snapshot. A non-zero snapshot can be CRC from before the bundle. The check uses the `host_nic_stats` series and counts only the increase inside the bundle.
+
+**Add.** No parser. Take the positive step between samples.
+
+**How.** The Panacea NIC check treats a CRC increment above 0 as a physical-layer hit (cable, SFP, or PHY). There is no soft line. An increase during the bundle is investigate. An unchanged counter is status 0, even when the absolute value is already above 0.
+
+```sql
+SELECT cvm_ip, iface, sum(delta) AS crc_increase
+FROM (
+    SELECT cvm_ip,
+           component_instance AS iface,
+           value - lagInFrame(value) OVER (
+               PARTITION BY cvm_ip, component_instance
+               ORDER BY event_timestamp
+           ) AS delta
+    FROM panacea.nu_metrics_sysstats
+    WHERE log_bundle_id = 12345
+      AND component = 'network'
+      AND metric_name = 'host_nic_rx_crc_errors'
+)
+WHERE delta > 0
+GROUP BY cvm_ip, iface
+ORDER BY crc_increase DESC
+LIMIT 100
+```
+
+A CRC increase with SAR drops on the same CVM is the pair to read together. Soft drops with a CRC increase of 0 are not a cable fault.
 
 ## Read the status
 
